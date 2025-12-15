@@ -29,4 +29,4 @@ strona dziala yippie
 jak zapiszecie plik to powinno przeładować odpowiedni serwer i nie musicie restartowac by zmiany zrobic, do backendu pamietajcie robic migracje jak cos w modelach zrobicie
 
 Jakby cos mi sie nie spushowalo na gita poprawnie to depsy do frontentu:
-npm install axios react-router-dom jwt-decode
+npm install 
