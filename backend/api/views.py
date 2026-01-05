@@ -1,12 +1,14 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
-from .models import Profile
-from .serializers import UserRegisterSerializer, UserTypeUpdateSerializer, UserGetSerializer
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from .models import Profile, Post
+from .serializers import UserRegisterSerializer, UserTypeUpdateSerializer, UserGetSerializer, PostSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
+from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly
 
 
 # Create your views here.
@@ -34,3 +36,53 @@ class CurrentUserView(APIView):
         # request.user is the currently logged-in user
         serializer = UserGetSerializer(request.user)
         return Response(serializer.data)
+
+
+class PostListCreate(generics.ListCreateAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Post.objects.all()
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            serializer.save(author=self.request.user)
+        else:
+            print(serializer.errors)
+            
+class PostDetailView(generics.RetrieveAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+
+class PostDeleteView(generics.DestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthorOrAdmin]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Post.objects.filter(author=user)
+
+
+class PostUpdateView(generics.UpdateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [IsAdminUser]
+
+class PostRateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        action = request.data.get('action', 'upvote') 
+        post = get_object_or_404(Post, pk=pk)
+        
+        if action == 'upvote':
+            post.upvotes += 1
+        elif action == 'downvote':
+            post.upvotes -= 1
+            
+        post.save()
+        return Response({'status': 'rated', 'upvotes': post.upvotes})

@@ -26,5 +26,6 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("api/auth/", include("rest_framework.urls")),
     path("api/user/change-type/<int:pk>/", ChangeProfileTypeView.as_view(), name="change_user_type"),
-    path("api/user/me/", CurrentUserView.as_view(), name="current-user")
+    path("api/user/me/", CurrentUserView.as_view(), name="current-user"),
+    path("api/", include("api.urls")),
 ]

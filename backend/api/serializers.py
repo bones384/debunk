@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from api.models import Profile
+from api.models import Profile, Post
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -32,3 +32,8 @@ class UserTypeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ["user","user_type"]
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['id', 'author', 'title', 'content', 'links', 'upvotes', 'created_at']
