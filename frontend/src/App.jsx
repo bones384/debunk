@@ -1,56 +1,52 @@
-import React from 'react'
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound.jsx";
-import ProtectedRoute from "./components/ProtectedRoute";
+import Header from "./components/Header";
 
 function Centered({ children }) {
-    return <div className="text-center">{children}</div>;
+  return <div className="text-center">{children}</div>;
 }
 
 function Logout() {
-    localStorage.clear()
-    return <Navigate to="/login" />
+  localStorage.clear();
+  return <Navigate to="/login" />;
 }
 
 function RegisterAndLogout() {
-    localStorage.clear()
-    return <Register />
+  localStorage.clear();
+  return <Register />;
 }
 
 function App() {
+  return (
+    <BrowserRouter>
+      <div className="min-vh-100 d-flex flex-column bg-body-tertiary">
+        <Header />
 
-    return (
-        <BrowserRouter>
-            <div
-                className="min-vh-100 d-flex align-items-center justify-content-center px-3"
-                data-bs-theme="dark"
-                style={{ backgroundColor: "#0b1220" }}
-            >
-                <div className="w-100" style={{ maxWidth: 900 }}>
-                    <div
-                        className="p-4 p-md-5 rounded-4 shadow text-light"
-                        style={{ backgroundColor: "#111b2e" }}
-                    >
-                        <style>{`
-              a { color: #9ec5fe; text-decoration: none; }
-              a:hover { color: #cfe2ff; text-decoration: underline; }
-            `}</style>
-
-                        <Routes>
-                            <Route path="/" element={<Centered><Index /></Centered>} />
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/logout" element={<Logout />} />
-                            <Route path="/register" element={<RegisterAndLogout />} />
-                            <Route path="*" element={<NotFound />} />
-                        </Routes>
-                    </div>
+        <main className="flex-grow-1 d-flex justify-content-center px-3">
+          <div className="w-100 d-flex" style={{ maxWidth: 1200 }}>
+            <div className="card shadow-lg border-0 flex-grow-1 rounded-0">
+              <div className="card-body p-4 p-md-5">
+                <div style={{ paddingTop: "12vh" }}>
+                  <Routes>
+                    <Route path="/" element={<Centered><Index /></Centered>} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/logout" element={<Logout />} />
+                    <Route path="/register" element={<RegisterAndLogout />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
                 </div>
+              </div>
             </div>
-        </BrowserRouter>
-    )
+          </div>
+        </main>
+      </div>
+    </BrowserRouter>
+  );
 }
 
-export default App
+
+export default App;
