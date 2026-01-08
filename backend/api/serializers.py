@@ -34,6 +34,25 @@ class UserTypeUpdateSerializer(serializers.ModelSerializer):
         fields = ["user","user_type"]
 
 class PostSerializer(serializers.ModelSerializer):
+
+    upvotes_count = serializers.SerializerMethodField()
+    downvotes_count = serializers.SerializerMethodField()
+    user_vote = serializers.SerializerMethodField()
     class Meta:
         model = Post
         fields = ['id', 'author', 'title', 'content', 'links', 'upvotes', 'created_at']
+
+    def get_upvotes_count(self, obj):
+        return obj.upvotes.count()
+
+    def get_downvotes_count(self, obj):
+        return obj.downvotes.count()
+
+    def get_user_vote(self, obj):
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            if obj.upvotes.filter(pk=user.pk).exists():
+                return 'up'
+            if obj.downvotes.filter(pk=user.pk).exists():
+                return 'down'
+        return None

@@ -19,8 +19,12 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     links = models.JSONField(default=list, blank=True)
-    upvotes = models.IntegerField(default=0)
+    upvotes = models.ManyToManyField(User, related_name='upvoted_posts', blank=True)
+    downvotes = models.ManyToManyField(User, related_name='downvoted_posts', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
+
+    def total_score(self):
+        return self.upvotes.count() - self.downvotes.count()
