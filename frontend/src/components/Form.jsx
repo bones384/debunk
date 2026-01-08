@@ -1,9 +1,9 @@
 import { useState } from "react";
 import api from "../api";
 import { useNavigate, Link } from "react-router-dom";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants.js";
+import { ACCESS_TOKEN, REFRESH_TOKEN, AUTH_CHANGED_EVENT } from "../constants.js";
 
-function Form({ route, method }) {
+function Form({ route, method, showSwitchLinks = true }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,6 +22,8 @@ function Form({ route, method }) {
       if (isLogin) {
         localStorage.setItem(ACCESS_TOKEN, response.data.access);
         localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
         navigate("/");
       } else {
         alert("Registration successful! You can now log in.");
@@ -46,7 +48,6 @@ function Form({ route, method }) {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
-          style={{ width: "25%" }}
         />
       </div>
 
@@ -58,7 +59,6 @@ function Form({ route, method }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ width: "25%" }}
         />
       </div>
 
@@ -66,23 +66,25 @@ function Form({ route, method }) {
         {loading ? "Please wait..." : title}
       </button>
 
-      <p className="mt-3 mb-0">
-        {isLogin ? (
-          <>
-            Don't have an account?{" "}
-            <Link to="/register" className="btn btn-link p-0 align-baseline">
-              Register
-            </Link>
-          </>
-        ) : (
-          <>
-            Have an account?{" "}
-            <Link to="/login" className="btn btn-link p-0 align-baseline">
-              Login 
-            </Link>
-          </>
-        )}
-      </p>
+      {showSwitchLinks && (
+        <p className="mt-3 mb-0">
+          {isLogin ? (
+            <>
+              Don't have an account?{" "}
+              <Link to="/register" className="btn btn-link p-0 align-baseline">
+                Register
+              </Link>
+            </>
+          ) : (
+            <>
+              Have an account?{" "}
+              <Link to="/login" className="btn btn-link p-0 align-baseline">
+                Login
+              </Link>
+            </>
+          )}
+        </p>
+      )}
     </form>
   );
 }

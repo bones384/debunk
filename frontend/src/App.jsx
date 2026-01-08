@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound.jsx";
 import Header from "./components/Header";
+import Auth from "./pages/Auth.jsx"
 
 function Centered({ children }) {
   return <div className="text-center">{children}</div>;
@@ -33,6 +34,7 @@ function App() {
                 <div style={{ paddingTop: "12vh" }}>
                   <Routes>
                     <Route path="/" element={<Centered><Index /></Centered>} />
+                    <Route path="/auth" element={<Auth />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/logout" element={<Logout />} />
                     <Route path="/register" element={<RegisterAndLogout />} />
