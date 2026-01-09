@@ -75,36 +75,22 @@ class PostUpdateView(generics.UpdateAPIView):
 class PostRateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-def post(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)
-        user = request.user
-        action = request.data.get('action')
+    def post(self, request, pk):
+            post = get_object_or_404(Post, pk=pk)
+            user = request.user
+            action = request.data.get('action')
 
-        if action == 'upvote':
-            if post.downvotes.filter(pk=user.pk).exists():
-                post.downvotes.remove(user)
-            
-            if post.upvotes.filter(pk=user.pk).exists():
-                post.upvotes.remove(user)
-            else:
-                post.upvotes.add(user)
+            if action == 'upvote':            
+                if post.upvotes.filter(pk=user.pk).exists():
+                    post.upvotes.remove(user)
+                else:
+                    post.upvotes.add(user)
 
-        elif action == 'downvote':
-            if post.upvotes.filter(pk=user.pk).exists():
-                post.upvotes.remove(user)
+            user_vote_status = None
+            if post.upvotes.filter(pk=user.pk).exists(): user_vote_status = 'up'
 
-            if post.downvotes.filter(pk=user.pk).exists():
-                post.downvotes.remove(user)
-            else:
-                post.downvotes.add(user)
-
-        user_vote_status = None
-        if post.upvotes.filter(pk=user.pk).exists(): user_vote_status = 'up'
-        if post.downvotes.filter(pk=user.pk).exists(): user_vote_status = 'down'
-
-        return Response({
-            'status': 'rated',
-            'upvotes': post.upvotes.count(),
-            'downvotes': post.downvotes.count(),
-            'user_vote': user_vote_status
-        }, status=status.HTTP_200_OK)
+            return Response({
+                'status': 'rated',
+                'upvotes': post.upvotes.count(),
+                'user_vote': user_vote_status
+            }, status=status.HTTP_200_OK)
