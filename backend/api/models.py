@@ -27,12 +27,12 @@ class Entry(models.Model):
 
 class Upvote(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="upvotes")
-    post = models.ForeignKey(Entry,on_delete=models.CASCADE,related_name="upvoted")
+    entry = models.ForeignKey(Entry,on_delete=models.CASCADE,related_name="upvoted")
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "post"],
-                name="unique_user_post_like"
+                fields=["user", "entry"],
+                name="unique_user_entry_like"
             )
         ]

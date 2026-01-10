@@ -103,16 +103,15 @@ class EntryRateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-            post = get_object_or_404(Post, pk=pk)
-            user = request.user
-            Upvote.objects.get_or_create(user=request.user,post=post)
+            entry = get_object_or_404(Entry, pk=pk)
+            Upvote.objects.get_or_create(user=request.user,entry=entry)
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     def delete(self, request, pk):
-        post = get_object_or_404(Entry, pk=pk)
+        entry = get_object_or_404(Entry, pk=pk)
         Upvote.objects.filter(
             user=request.user,
-            post=post
+            entry=entry
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
