@@ -40,7 +40,7 @@ class EntrySerializer(serializers.ModelSerializer):
     user_vote = serializers.SerializerMethodField()
     class Meta:
         model = Entry
-        fields = ['id', 'author', 'title', 'content','sources', 'articles', 'upvotes_count', 'user_vote', 'created_at']
+        fields = ['id', 'author', 'title','is_truthful', 'content','sources', 'articles', 'upvotes_count', 'user_vote', 'created_at']
 
     def get_user_vote(self, obj):
         user = self.context.get('request').user
