@@ -14,4 +14,25 @@ class Profile(models.Model):
         choices=AccountType.choices,
         default=AccountType.STANDARD
     )
+class Entry(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    sources = models.JSONField(default=list, blank=True)
+    articles = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.title
+
+class Upvote(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="upvotes")
+    post = models.ForeignKey(Entry,on_delete=models.CASCADE,related_name="upvoted")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "post"],
+                name="unique_user_post_like"
+            )
+        ]
