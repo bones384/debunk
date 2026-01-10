@@ -1,14 +1,15 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
+from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
-from .models import Profile, Post
-from .serializers import UserRegisterSerializer, UserTypeUpdateSerializer, UserGetSerializer, PostSerializer
+from .models import Profile, Upvote, Entry
+from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
-from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly
+from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, IsAuthor
 
 
 # Create your views here.
@@ -19,7 +20,7 @@ class CreateUserView(generics.CreateAPIView):
 
 class ChangeProfileTypeView(generics.UpdateAPIView):
     queryset = Profile.objects.all()
-    serializer_class = UserTypeUpdateSerializer
+    serializer_class = UserProfileSerializer
     permission_classes = [IsAdminUser]
 
     def get_object(self):
@@ -34,63 +35,84 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         # request.user is the currently logged-in user
-        serializer = UserGetSerializer(request.user)
+        serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
+class UserDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
-class PostListCreate(generics.ListCreateAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_permissions(self):
+        if self.request.method == "GET": # get user data
+            return [AllowAny()]
 
-    def get_queryset(self):
-        user = self.request.user
-        return Post.objects.all()
+        if self.request.method == "PATCH":
+            return [IsAuthenticated(), IsAdminOrSelf()] #change user data
 
-    def perform_create(self, serializer):
-        if serializer.is_valid():
-            serializer.save(author=self.request.user)
-        else:
-            print(serializer.errors)
-            
-class PostDetailView(generics.RetrieveAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
+        if self.request.method == "DELETE":
+            return [IsAdminUser()] #delete user from db
 
-class PostDeleteView(generics.DestroyAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthorOrAdmin]
+        return super().get_permissions()
 
-    def get_queryset(self):
-        user = self.request.user
-        return Post.objects.filter(author=user)
-
-
-class PostUpdateView(generics.UpdateAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
+class UsersAll(ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
 
-class PostRateView(APIView):
+class EntryListCreate(generics.ListCreateAPIView):
+    serializer_class = EntrySerializer
+    def get_permissions(self):
+        if self.request.method == "GET": # get user data
+            return [AllowAny()]
+
+        if self.request.method == "PATCH":
+            return [IsAuthenticated(), IsAuthor()] #change user data
+
+        if self.request.method == "DELETE":
+            return [IsAdminUser()] #delete user from db
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        user = self.request.user
+        return Entry.objects.all()
+
+    def perform_create(self, serializer):
+
+            serializer.save(author=self.request.user)
+
+            
+class EntryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Entry.objects.all()
+    serializer_class = EntrySerializer
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+
+        if self.request.method == "PATCH":
+            return [IsAuthenticated(), IsAuthor()]
+
+        if self.request.method == "DELETE":
+            return [IsAdminUser()]
+
+        return super().get_permissions()
+
+
+
+class EntryRateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
             post = get_object_or_404(Post, pk=pk)
             user = request.user
-            action = request.data.get('action')
+            Upvote.objects.get_or_create(user=request.user,post=post)
 
-            if action == 'upvote':            
-                if post.upvotes.filter(pk=user.pk).exists():
-                    post.upvotes.remove(user)
-                else:
-                    post.upvotes.add(user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
-            user_vote_status = None
-            if post.upvotes.filter(pk=user.pk).exists(): user_vote_status = 'up'
-
-            return Response({
-                'status': 'rated',
-                'upvotes': post.upvotes.count(),
-                'user_vote': user_vote_status
-            }, status=status.HTTP_200_OK)
+    def delete(self, request, pk):
+        post = get_object_or_404(Entry, pk=pk)
+        Upvote.objects.filter(
+            user=request.user,
+            post=post
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

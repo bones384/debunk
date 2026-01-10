@@ -19,13 +19,19 @@ from django.urls import path, include
 from api.views import CreateUserView, ChangeProfileTypeView, CurrentUserView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from api.views import UsersAll
+
+from api.views import UserDetailView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/user/register/", CreateUserView.as_view(), name="register"),
-    path("api/token/", TokenObtainPairView.as_view(), name="get_token"),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"),
-    path("api/auth/", include("rest_framework.urls")),
-    path("api/user/change-type/<int:pk>/", ChangeProfileTypeView.as_view(), name="change_user_type"),
-    path("api/user/me/", CurrentUserView.as_view(), name="current-user"),
+    path("api/auth/register/", CreateUserView.as_view(), name="register-user"),
+    path("api/auth/token/", TokenObtainPairView.as_view(), name="get-token"),
+    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="refresh-token"),
+    #path("api/auth/", include("rest_framework.urls")),
+    path("api/users/<int:pk>/role/", ChangeProfileTypeView.as_view(), name="change-user-type"),
+    path("api/users/me/", CurrentUserView.as_view(), name="current-user"),
     path("api/", include("api.urls")),
+    path("api/users/", UsersAll.as_view(), name="get-all-users"),
+    path("api/users/<int:pk>/", UserDetailView.as_view(),name="user")
 ]
