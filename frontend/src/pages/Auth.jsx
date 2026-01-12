@@ -19,7 +19,7 @@ export default function Auth() {
             <div className="card-body d-flex flex-column justify-content-center">
               <div className="mx-auto w-100" style={{ maxWidth: 420 }}>
                 <Form
-                  route="/api/user/register/"
+                  route="/api/auth/register/"
                   method="register"
                   showSwitchLinks={false}
                 />

@@ -17,7 +17,7 @@ export default function useCurrentUser() {
           return;
         }
 
-        const response = await api.get("/api/user/me/", {
+        const response = await api.get("/api/users/me/", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
