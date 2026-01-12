@@ -8,7 +8,7 @@ export default function Auth() {
           <div className="card shadow-sm w-100">
             <div className="card-body d-flex flex-column justify-content-center">
               <div className="mx-auto w-100" style={{ maxWidth: 420 }}>
-                <Form route="/api/token/" method="login" showSwitchLinks={false} />
+                <Form route="/api/auth/token/" method="login" showSwitchLinks={false} />
               </div>
             </div>
           </div>
