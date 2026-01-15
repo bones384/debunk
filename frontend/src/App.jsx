@@ -6,6 +6,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound.jsx";
 import Header from "./components/Header";
 import Auth from "./pages/Auth.jsx"
+import NewEntry from "./pages/NewEntry.jsx";
+import EditEntry from "./pages/EditEntry.jsx";
+
 
 function Centered({ children }) {
   return <div className="text-center">{children}</div>;
@@ -35,6 +38,8 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Centered><Index /></Centered>} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/entries/new" element={<NewEntry />} />
+                    <Route path="/entries/:id/edit" element={<EditEntry />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/logout" element={<Logout />} />
                     <Route path="/register" element={<RegisterAndLogout />} />
