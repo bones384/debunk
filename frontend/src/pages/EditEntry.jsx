@@ -5,7 +5,7 @@ import useCurrentUser from "../components/useCurrentUser.jsx";
 
 export default function EditEntry() {
   const navigate = useNavigate();
-  const { id } = useParams(); // /entries/:id/edit :contentReference[oaicite:4]{index=4}
+  const { id } = useParams(); // /entries/:id/edit
   const { user, loading } = useCurrentUser();
 
   const [entryLoading, setEntryLoading] = useState(true);
@@ -59,25 +59,25 @@ export default function EditEntry() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>Ładowanie...</div>;
 
   if (!user) {
     return (
       <div>
-        <p>You are not logged in.</p>
-        <Link to="/auth" className="btn btn-primary">
-          Login / Register
+        <p>Nie jesteś zalogowany.</p>
+        <Link to="/auth" className="btn btn-primary btn-sm px-3 py-1">
+          Zaloguj / Zarejestruj
         </Link>
       </div>
     );
   }
 
-  if (entryLoading) return <div>Loading entry...</div>;
+  if (entryLoading) return <div>Ładowanie wpisu...</div>;
 
   if (entryError) {
     return (
       <div className="alert alert-danger">
-        Failed to load entry:
+        Nie udało się wczytać wpisu:
         <pre className="m-0">{JSON.stringify(entryError, null, 2)}</pre>
       </div>
     );
@@ -86,9 +86,12 @@ export default function EditEntry() {
   return (
     <div className="container py-2">
       <div className="d-flex align-items-center justify-content-between mb-3">
-        <h3 className="m-0">Edit entry #{id}</h3>
-        <button className="btn btn-outline-secondary" onClick={() => navigate(-1)}>
-          Back
+        <h3 className="m-0">Edytuj wpis #{id}</h3>
+        <button
+          className="btn btn-outline-secondary btn-sm px-3 py-1"
+          onClick={() => navigate(-1)}
+        >
+          Wstecz
         </button>
       </div>
 
@@ -100,7 +103,7 @@ export default function EditEntry() {
 
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label className="form-label">Title</label>
+          <label className="form-label">Tytuł</label>
           <input
             className="form-control"
             value={title}
@@ -111,7 +114,7 @@ export default function EditEntry() {
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Content</label>
+          <label className="form-label">Treść</label>
           <textarea
             className="form-control"
             rows={6}
@@ -121,30 +124,50 @@ export default function EditEntry() {
           />
         </div>
 
-        <div className="form-check mb-4">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            checked={isTruthful}
-            onChange={(e) => setIsTruthful(e.target.checked)}
-            id="isTruthful"
-          />
-          <label className="form-check-label" htmlFor="isTruthful">
-            Mark as truthful
-          </label>
+        {/* ✅ RADIO zamiast checkbox */}
+        <div className="mb-4">
+          <label className="form-label d-block">Prawdziwość</label>
+
+          <div className="form-check form-check-inline">
+            <input
+              className="form-check-input"
+              type="radio"
+              name="truthfulness"
+              id="truthful-yes"
+              checked={isTruthful === true}
+              onChange={() => setIsTruthful(true)}
+            />
+            <label className="form-check-label" htmlFor="truthful-yes">
+              Prawdziwe
+            </label>
+          </div>
+
+          <div className="form-check form-check-inline">
+            <input
+              className="form-check-input"
+              type="radio"
+              name="truthfulness"
+              id="truthful-no"
+              checked={isTruthful === false}
+              onChange={() => setIsTruthful(false)}
+            />
+            <label className="form-check-label" htmlFor="truthful-no">
+              Nieprawdziwe
+            </label>
+          </div>
         </div>
 
         <div className="d-flex gap-2">
-          <button className="btn btn-primary" type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save changes"}
+          <button className="btn btn-primary btn-sm px-3 py-1" type="submit" disabled={saving}>
+            {saving ? "Zapisywanie..." : "Zapisz"}
           </button>
           <button
-            className="btn btn-outline-secondary"
+            className="btn btn-outline-secondary btn-sm px-3 py-1"
             type="button"
             onClick={() => navigate("/")}
             disabled={saving}
           >
-            Cancel
+            Anuluj
           </button>
         </div>
       </form>

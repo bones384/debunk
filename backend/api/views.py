@@ -10,6 +10,7 @@ from .models import Profile, Upvote, Entry
 from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
 from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, IsAuthor
+from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer
 
 
 # Create your views here.
@@ -35,7 +36,7 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         # request.user is the currently logged-in user
-        serializer = UserSerializer(request.user)
+        serializer = CurrentUserSerializer(request.user)
         return Response(serializer.data)
 
 class UserDetailView(RetrieveUpdateDestroyAPIView):

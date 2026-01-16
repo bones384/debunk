@@ -10,7 +10,7 @@ function Form({ route, method, showSwitchLinks = true }) {
 
   const navigate = useNavigate();
   const isLogin = method === "login";
-  const title = isLogin ? "Login" : "Register";
+  const title = isLogin ? "Zaloguj" : "Zarejestruj";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +44,7 @@ function Form({ route, method, showSwitchLinks = true }) {
         <input
           className="form-control"
           type="text"
-          placeholder="Username"
+          placeholder="Nazwa użytkownika"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
@@ -55,7 +55,7 @@ function Form({ route, method, showSwitchLinks = true }) {
         <input
           className="form-control"
           type="password"
-          placeholder="Password"
+          placeholder="Hasło"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -70,16 +70,16 @@ function Form({ route, method, showSwitchLinks = true }) {
         <p className="mt-3 mb-0">
           {isLogin ? (
             <>
-              Don't have an account?{" "}
+              Nie posiadasz konta?{" "}
               <Link to="/register" className="btn btn-link p-0 align-baseline">
-                Register
+                Zarejestruj
               </Link>
             </>
           ) : (
             <>
-              Have an account?{" "}
+              Masz już konto?{" "}
               <Link to="/login" className="btn btn-link p-0 align-baseline">
-                Login
+                Zaloguj
               </Link>
             </>
           )}

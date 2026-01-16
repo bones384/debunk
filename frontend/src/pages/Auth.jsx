@@ -6,7 +6,7 @@ export default function Auth() {
       <div className="row g-4 align-items-stretch">
         <div className="col-12 col-md-6 d-flex">
           <div className="card shadow-sm w-100">
-            <div className="card-body d-flex flex-column justify-content-center">
+            <div className="card-body d-flex flex-column justify-content-start">
               <div className="mx-auto w-100" style={{ maxWidth: 420 }}>
                 <Form route="/api/auth/token/" method="login" showSwitchLinks={false} />
               </div>
@@ -16,7 +16,7 @@ export default function Auth() {
 
         <div className="col-12 col-md-6 d-flex">
           <div className="card shadow-sm w-100">
-            <div className="card-body d-flex flex-column justify-content-center">
+            <div className="card-body d-flex flex-column justify-content-start">
               <div className="mx-auto w-100" style={{ maxWidth: 420 }}>
                 <Form
                   route="/api/auth/register/"

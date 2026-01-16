@@ -5,7 +5,7 @@ import { ACCESS_TOKEN, REFRESH_TOKEN, AUTH_CHANGED_EVENT } from "../constants.js
 
 export default function Header() {
   const navigate = useNavigate();
-  const { user, loading } = useCurrentUser();
+  const { user } = useCurrentUser();
 
   const [loggedIn, setLoggedIn] = useState(
     Boolean(localStorage.getItem(ACCESS_TOKEN))
@@ -33,20 +33,20 @@ export default function Header() {
   };
 
   return (
-    <nav className="navbar navbar-dark bg-primary sticky-top shadow-sm">
-      <div className="container">
+    <nav className="navbar navbar-dark bg-primary sticky-top shadow-sm py-2">
+      <div className="container py-0">
         <div
-          className="mx-auto w-100 d-flex align-items-center"
+          className="mx-auto w-100 d-flex align-items-center py-0"
           style={{ maxWidth: 900 }}
         >
-          <Link to="/" className="navbar-brand m-0 fw-bold fs-3 brand-debunk">
+          <Link to="/" className="navbar-brand m-0 fw-bold fs-4 lh-1 brand-debunk">
             Debunk
           </Link>
 
           {loggedIn ? (
             <div className="ms-auto d-flex align-items-center">
-              <span className="text-white small me-3 d-flex align-items-center">
-                <i className="fa-solid fa-user me-2" aria-hidden="true"></i>
+              <span className="text-white small me-2 d-flex align-items-center lh-1">
+                <i className="fa-solid fa-user me-1" aria-hidden="true"></i>
 
                 <span className="fw-bolder">{user?.username}</span>
 
@@ -55,18 +55,17 @@ export default function Header() {
                 )}
               </span>
 
-
               <button
                 type="button"
-                className="btn btn-outline-light btn-sm"
+                className="btn btn-outline-light btn-sm py-0 px-1"
                 onClick={handleLogout}
               >
-                Logout
+                Wyloguj
               </button>
             </div>
           ) : (
-            <Link to="/auth" className="btn btn-outline-light btn-sm ms-auto">
-              Login / Register
+            <Link to="/auth" className="btn btn-outline-light btn-sm ms-auto py-0 px-2">
+              Zaloguj / Zarejestruj
             </Link>
           )}
         </div>

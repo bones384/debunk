@@ -1,11 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../api";
 import useCurrentUser from "../components/useCurrentUser.jsx";
 
 function Index() {
   const navigate = useNavigate();
-  const { user, loading } = useCurrentUser();
+  const { user } = useCurrentUser();
 
   const [entries, setEntries] = useState([]);
   const [entriesLoading, setEntriesLoading] = useState(false);
@@ -18,7 +18,7 @@ function Index() {
   const getTitleText = (entry) =>
     typeof entry?.title === "string" && entry.title.trim()
       ? entry.title
-      : `Entry #${entry?.id ?? "?"}`;
+      : `Wpis #${entry?.id ?? "?"}`;
 
   const getBodyText = (entry) =>
     typeof entry?.content === "string" ? entry.content : "";
@@ -33,7 +33,6 @@ function Index() {
     typeof entry?.user_vote === "boolean" ? entry.user_vote : false;
 
   // --- role / uprawnienia ---
-  // minimalnie bardziej odporne na różne formaty /api/users/me/
   const userTypeRaw = user?.profile?.user_type ?? user?.user_type ?? user?.role ?? "";
   const userType = String(userTypeRaw).toLowerCase();
 
@@ -44,7 +43,8 @@ function Index() {
     userType === "editor" ||
     user?.is_staff === true;
 
-  const canCreateEntry = isAdmin || isRedactor;
+  // create tylko redactor
+  const canCreateEntry = !!user && isRedactor;
 
   const canEditEntry = (entry) => {
     if (!user) return false;
@@ -54,16 +54,12 @@ function Index() {
       : false;
   };
 
-  // ✅ ZMIANA #1: delete tylko admin
+  // delete tylko admin
   const canDeleteEntry = () => !!user && isAdmin;
 
+  // --- fetch entries (ZAWSZE, bez względu na login) ---
   useEffect(() => {
     const fetchEntries = async () => {
-      if (!user) {
-        setEntries([]);
-        return;
-      }
-
       setEntriesLoading(true);
       setEntriesError(null);
 
@@ -83,7 +79,6 @@ function Index() {
 
   // --- akcje ---
   const handleCreate = () => {
-    // nawigacja programowa react-router
     navigate("/entries/new");
   };
 
@@ -92,20 +87,22 @@ function Index() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this entry?")) return;
+    if (!window.confirm("Usunąć ten wpis?")) return;
 
     try {
       await api.delete(`/api/entries/${id}/`);
       setEntries((prev) => prev.filter((e) => e.id !== id));
     } catch (e) {
       alert(
-        "Failed to delete:\n" +
+        "Nie udało się usunąć:\n" +
         JSON.stringify(e?.response?.data ?? e.message, null, 2)
       );
     }
   };
 
   const toggleUpvote = async (entry) => {
+    if (!user) return; // gość nie głosuje
+
     const id = entry?.id;
     if (!id) return;
     if (busyById[id]) return;
@@ -116,7 +113,6 @@ function Index() {
     const nextUpvoted = !wasUpvoted;
     const nextCount = Math.max(0, prevCount + (nextUpvoted ? 1 : -1));
 
-    // optimistic update: UI od razu się przełącza
     setBusyById((m) => ({ ...m, [id]: true }));
     setEntries((prev) =>
       prev.map((e) =>
@@ -131,7 +127,6 @@ function Index() {
         await api.delete(`/api/entries/${id}/upvote/`);
       }
     } catch (e) {
-      // rollback
       setEntries((prev) =>
         prev.map((e2) =>
           e2.id === id
@@ -139,122 +134,113 @@ function Index() {
             : e2
         )
       );
-      alert("Upvote failed:\n" + JSON.stringify(e?.response?.data ?? e.message, null, 2));
+      alert(
+        "Błąd podbijania:\n" +
+        JSON.stringify(e?.response?.data ?? e.message, null, 2)
+      );
     } finally {
       setBusyById((m) => ({ ...m, [id]: false }));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-
   return (
     <div className="container py-4">
-      <h1 className="mb-4">Welcome to Debunk</h1>
+      <h1 className="mb-4">Witamy w Debunk</h1>
 
-      {!user ? (
-        <>
-          <p>You are not logged in.</p>
-          <Link to="/auth" className="btn btn-primary">
-            Login / Register
-          </Link>
-        </>
-      ) : (
-        <>
-          <div className="mb-4 d-flex align-items-center justify-content-between">
-            <div>
-              <h5 className="mb-0">All entries</h5>
-              <small className="text-muted">
-                Logged in as <strong>{user.username}</strong>
-              </small>
-            </div>
+      <div className="mb-3">
+        <h5 className="mb-2 text-center">Wszystkie wpisy</h5>
 
-            {/* Przycisk ZAWSZE widoczny, tylko disabled gdy brak uprawnień */}
+        {canCreateEntry && (
+          <div className="d-flex justify-content-end">
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm px-3 py-1"
               onClick={handleCreate}
-              disabled={!canCreateEntry}
-              title={!canCreateEntry ? `No permission (role: ${userTypeRaw || "?"})` : ""}
             >
               <i className="fa-solid fa-plus me-2" aria-hidden="true"></i>
-              Add new entry
+              Dodaj wpis
             </button>
           </div>
+        )}
+      </div>
 
-          {entriesLoading && <div>Loading entries...</div>}
+      {entriesLoading && <div>Ładowanie wpisów...</div>}
 
-          {entriesError && (
-            <div className="alert alert-danger">
-              Failed to load entries:
-              <pre className="m-0">{JSON.stringify(entriesError, null, 2)}</pre>
-            </div>
-          )}
+      {entriesError && (
+        <div className="alert alert-danger">
+          Nie udało się wczytać wpisów:
+          <pre className="m-0">{JSON.stringify(entriesError, null, 2)}</pre>
+        </div>
+      )}
 
-          {!entriesLoading && !entriesError && entries.length === 0 && (
-            <div className="text-muted">No entries yet.</div>
-          )}
+      {!entriesLoading && !entriesError && entries.length === 0 && (
+        <div className="text-muted">Brak wpisów.</div>
+      )}
 
-          <div className="d-grid gap-3">
-            {entries.map((entry) => {
-              const id = entry.id;
-              const upvoted = getIsUpvoted(entry);
-              const count = getUpvotesCount(entry);
+      <div className="d-grid gap-3">
+        {entries.map((entry) => {
+          const id = entry.id;
+          const upvoted = getIsUpvoted(entry);
+          const count = getUpvotesCount(entry);
 
-              return (
-                <div
-                  className="card shadow-sm border border-2 border-secondary border-opacity-25"
-                  key={id}
-                >
-                  <div className="card-body d-flex flex-column">
-                    <h5 className="card-title mb-2">{getTitleText(entry)}</h5>
+          return (
+            <div
+              className="card shadow-sm border border-2 border-secondary border-opacity-25"
+              key={id}
+            >
+              <div className="card-body d-flex flex-column">
+                <h5 className="card-title mb-2">{getTitleText(entry)}</h5>
 
-                    <p className="card-text mb-2">{getBodyText(entry)}</p>
+                <p className="card-text mb-2">{getBodyText(entry)}</p>
 
-                    <small className="text-muted">Author: {getAuthorLabel(entry)}</small>
+                <small className="text-muted">Autor: {getAuthorLabel(entry)}</small>
 
-                    <div className="d-flex align-items-center justify-content-between mt-auto pt-3">
+                <div className="d-flex align-items-center justify-content-between mt-auto pt-3">
+                  <button
+                    type="button"
+                    className={`btn btn-sm px-3 py-1 ${upvoted ? "btn-success" : "btn-outline-success"
+                      }`}
+                    title={
+                      !user
+                        ? "Zaloguj się, aby podbić"
+                        : upvoted
+                          ? "Usuń podbicie"
+                          : "Podbij"
+                    }
+                    disabled={!id || !!busyById[id] || !user}
+                    onClick={() => toggleUpvote(entry)}
+                  >
+                    {upvoted ? "✓ Podbito" : "+ Podbij"}
+                    <span className="ms-2 badge text-bg-light">{count}</span>
+                  </button>
+
+                  <div className="d-flex justify-content-end gap-2">
+                    {canEditEntry(entry) && (
                       <button
                         type="button"
-                        className={`btn btn-sm ${upvoted ? "btn-success" : "btn-outline-success"
-                          }`}
-                        title={upvoted ? "Remove upvote" : "Upvote"}
-                        disabled={!id || !!busyById[id]}
-                        onClick={() => toggleUpvote(entry)}
+                        className="btn btn-outline-secondary btn-sm px-2 py-1"
+                        onClick={() => handleEdit(id)}
                       >
-                        {upvoted ? "✓ Upvoted" : "+ Upvote"}
-                        <span className="ms-2 badge text-bg-light">{count}</span>
+                        Edytuj
                       </button>
+                    )}
 
-                      <div className="d-flex justify-content-end gap-2">
-                        {canEditEntry(entry) && (
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => handleEdit(id)}
-                          >
-                            Edit
-                          </button>
-                        )}
-
-                        {/* ✅ ZMIANA #2: render delete tylko admin */}
-                        {canDeleteEntry() && (
-                          <button
-                            type="button"
-                            className="btn btn-outline-danger btn-sm"
-                            onClick={() => handleDelete(id)}
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    {canDeleteEntry() && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm px-2 py-1"
+                        onClick={() => handleDelete(id)}
+                      >
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

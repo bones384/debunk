@@ -47,3 +47,13 @@ class EntrySerializer(serializers.ModelSerializer):
         if user.is_authenticated:
             return obj.upvoted.filter(user=user).exists()
         return False
+    
+    
+class CurrentUserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer(read_only=True)
+    is_staff = serializers.BooleanField(read_only=True)
+    is_superuser = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "profile", "is_staff", "is_superuser"]
