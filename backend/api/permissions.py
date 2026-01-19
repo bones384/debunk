@@ -1,6 +1,4 @@
 from rest_framework import permissions
-
-
 class IsAuthorOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
@@ -66,3 +64,4 @@ class IsRedactorOrReadOnlyObject(permissions.BasePermission):
 class IsAuthor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.author==request.user
+    

@@ -36,12 +36,12 @@ function Index() {
   const userTypeRaw = user?.profile?.user_type ?? user?.user_type ?? user?.role ?? "";
   const userType = String(userTypeRaw).toLowerCase();
 
-  const isAdmin = userType === "admin" || user?.is_superuser === true;
+  const isAdmin =  user?.is_superuser === true;
   const isRedactor =
     userType === "redactor" ||
     userType === "redaktor" ||
     userType === "editor" ||
-    user?.is_staff === true;
+    user?.is_superuser === true;
 
   // create tylko redactor
   const canCreateEntry = !!user && isRedactor;
