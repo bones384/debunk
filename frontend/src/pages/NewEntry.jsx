@@ -17,12 +17,11 @@ export default function NewEntry() {
   const userTypeRaw = user?.profile?.user_type ?? user?.user_type ?? user?.role ?? "";
   const userType = String(userTypeRaw).toLowerCase();
 
-  // tylko redaktor (zgodnie z tym co ustaliliśmy)
   const canCreate =
     userType === "redactor" ||
     userType === "redaktor" ||
     userType === "editor" ||
-    user?.is_staff === true;
+    user?.is_superuser === true;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,7 +104,6 @@ export default function NewEntry() {
           />
         </div>
 
-        {/* ✅ RADIO zamiast checkbox */}
         <div className="mb-4">
           <label className="form-label d-block">Prawdziwość</label>
 

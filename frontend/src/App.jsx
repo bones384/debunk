@@ -1,14 +1,15 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound.jsx";
+
 import Header from "./components/Header";
-import Auth from "./pages/Auth.jsx"
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import Index from "./pages/Index";
+import Auth from "./pages/Auth.jsx";
 import NewEntry from "./pages/NewEntry.jsx";
 import EditEntry from "./pages/EditEntry.jsx";
-
+import NotFound from "./pages/NotFound.jsx";
+import Accounts from "./pages/Accounts.jsx";
 
 function Centered({ children }) {
   return <div className="text-center">{children}</div>;
@@ -16,12 +17,7 @@ function Centered({ children }) {
 
 function Logout() {
   localStorage.clear();
-  return <Navigate to="/login" />;
-}
-
-function RegisterAndLogout() {
-  localStorage.clear();
-  return <Register />;
+  return <Navigate to="/auth" replace />;
 }
 
 function App() {
@@ -38,11 +34,35 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Centered><Index /></Centered>} />
                     <Route path="/auth" element={<Auth />} />
-                    <Route path="/entries/new" element={<NewEntry />} />
-                    <Route path="/entries/:id/edit" element={<EditEntry />} />
-                    <Route path="/login" element={<Login />} />
+
+                    <Route
+                      path="/entries/new"
+                      element={
+                        <ProtectedRoute>
+                          <NewEntry />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path="/entries/:id/edit"
+                      element={
+                        <ProtectedRoute>
+                          <EditEntry />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path="/konta"
+                      element={
+                        <ProtectedRoute requireSuperuser>
+                          <Accounts />
+                        </ProtectedRoute>
+                      }
+                    />
+
                     <Route path="/logout" element={<Logout />} />
-                    <Route path="/register" element={<RegisterAndLogout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
@@ -54,6 +74,5 @@ function App() {
     </BrowserRouter>
   );
 }
-
 
 export default App;
