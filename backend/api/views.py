@@ -9,7 +9,8 @@ from django.shortcuts import get_object_or_404
 from .models import Profile, Upvote, Entry
 from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
-from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, IsAuthor
+from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, \
+    IsAuthor, IsRedactor
 from .serializers import (
     UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer
 )
@@ -67,7 +68,8 @@ class EntryListCreate(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return [AllowAny()]
-
+        if self.request.method == "PUT" or self.request.method == "POST":
+            return [IsRedactor()]
         if self.request.method == "DELETE":
             return [IsAdminUser()]
 
