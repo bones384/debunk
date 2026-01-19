@@ -32,6 +32,8 @@ export default function Header() {
     navigate("/auth");
   };
 
+  const isSuperuser = Boolean(user?.is_superuser);
+
   return (
     <nav className="navbar navbar-dark bg-primary sticky-top shadow-sm py-2">
       <div className="container py-0">
@@ -45,14 +47,23 @@ export default function Header() {
 
           {loggedIn ? (
             <div className="ms-auto d-flex align-items-center">
+              {/* Admin button */}
+              {isSuperuser && (
+                <Link
+                  to="/konta"
+                  className="btn btn-outline-light btn-sm py-0 px-2 me-2"
+                >
+                  Konta
+                </Link>
+              )}
+
               <span className="text-white small me-2 d-flex align-items-center lh-1">
                 <i className="fa-solid fa-user me-1" aria-hidden="true"></i>
-
                 <span className="fw-bolder">{user?.username}</span>
-
                 {user?.profile?.user_type && (
                   <span className="fw-normal ms-2"> | {user.profile.user_type}</span>
                 )}
+                {isSuperuser && <span className="fw-normal ms-2"> | admin</span>}
               </span>
 
               <button

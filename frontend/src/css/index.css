@@ -13,3 +13,8 @@
 .navbar .btn.btn-outline-light:active {
   color: #000;
 }
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.9 !important;
+}
