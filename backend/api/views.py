@@ -8,8 +8,12 @@ from django.shortcuts import get_object_or_404
 
 from .models import Profile, Upvote, Entry
 from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
-from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, IsAuthor
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
+from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, \
+    IsAuthor, IsRedactor
+from .serializers import (
+    UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer
+)
 
 
 # Create your views here.
@@ -34,9 +38,9 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # request.user is the currently logged-in user
-        serializer = UserSerializer(request.user)
+        serializer = CurrentUserSerializer(request.user)
         return Response(serializer.data)
+
 
 class UserDetailView(RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
@@ -62,14 +66,12 @@ class UsersAll(ListAPIView):
 class EntryListCreate(generics.ListCreateAPIView):
     serializer_class = EntrySerializer
     def get_permissions(self):
-        if self.request.method == "GET": # get user data
+        if self.request.method == "GET":
             return [AllowAny()]
-
-        if self.request.method == "PATCH":
-            return [IsAuthenticated(), IsAuthor()] #change user data
-
+        if self.request.method == "PUT" or self.request.method == "POST":
+            return [IsRedactor()]
         if self.request.method == "DELETE":
-            return [IsAdminUser()] #delete user from db
+            return [IsAdminUser()]
 
         return super().get_permissions()
 

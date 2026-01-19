@@ -1,6 +1,4 @@
 from rest_framework import permissions
-
-
 class IsAuthorOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
@@ -19,23 +17,22 @@ class IsAdminOrSelf(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         # Admins can do anything
-        if request.user.is_staff:
+        if request.user.is_superuser:
             return True
 
         # Normal users can only act on their own object
         return obj == request.user
 
 class IsRedactor(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
+    def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        # Check if user has a profile and user_type is 'redactor'
         profile = getattr(request.user, "profile", None)
-        if profile and profile.user_type == "redactor":
-            return True
+        return bool(profile and profile.user_type == "redactor")
 
-        return False
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
 
 class IsRedactorOrReadOnlyObject(permissions.BasePermission):
 
@@ -66,3 +63,4 @@ class IsRedactorOrReadOnlyObject(permissions.BasePermission):
 class IsAuthor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.author==request.user
+    

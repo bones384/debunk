@@ -1,0 +1,20 @@
+.brand-debunk {
+  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.navbar .btn.btn-outline-light {
+  color: #fff;
+}
+
+.navbar .btn.btn-outline-light:hover,
+.navbar .btn.btn-outline-light:focus,
+.navbar .btn.btn-outline-light:active {
+  color: #000;
+}
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.9 !important;
+}
