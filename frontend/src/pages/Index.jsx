@@ -41,7 +41,7 @@ function Index() {
     userType === "redactor" ||
     userType === "redaktor" ||
     userType === "editor" ||
-    user?.is_staff === true;
+    user?.is_superuser === true;
 
   // create tylko redactor
   const canCreateEntry = !!user && isRedactor;

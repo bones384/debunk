@@ -8,9 +8,11 @@ from django.shortcuts import get_object_or_404
 
 from .models import Profile, Upvote, Entry
 from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
-from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, IsAuthor
-from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, IsAuthor, IsSuperuser
+from .serializers import (
+    UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer
+)
 
 
 # Create your views here.
@@ -22,7 +24,7 @@ class CreateUserView(generics.CreateAPIView):
 class ChangeProfileTypeView(generics.UpdateAPIView):
     queryset = Profile.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsSuperuser]
 
     def get_object(self):
         # admin chooses which user to modify
@@ -35,9 +37,9 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # request.user is the currently logged-in user
         serializer = CurrentUserSerializer(request.user)
         return Response(serializer.data)
+
 
 class UserDetailView(RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
@@ -51,14 +53,14 @@ class UserDetailView(RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated(), IsAdminOrSelf()] #change user data
 
         if self.request.method == "DELETE":
-            return [IsAdminUser()] #delete user from db
+            return [IsSuperuser()] #delete user from db
 
         return super().get_permissions()
 
 class UsersAll(ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsSuperuser]
 
 class EntryListCreate(generics.ListCreateAPIView):
     serializer_class = EntrySerializer
@@ -70,7 +72,7 @@ class EntryListCreate(generics.ListCreateAPIView):
             return [IsAuthenticated(), IsAuthor()] #change user data
 
         if self.request.method == "DELETE":
-            return [IsAdminUser()] #delete user from db
+            return [IsSuperuser()] #delete user from db
 
         return super().get_permissions()
 
@@ -94,7 +96,7 @@ class EntryDetailView(generics.RetrieveUpdateDestroyAPIView):
             return [IsAuthenticated(), IsAuthor()]
 
         if self.request.method == "DELETE":
-            return [IsAdminUser()]
+            return [IsSuperuser()]
 
         return super().get_permissions()
 
