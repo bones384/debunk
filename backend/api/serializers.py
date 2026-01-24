@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from api.models import Profile, Entry
+from api.models import Profile, Entry, Tag
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -24,11 +24,28 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         )
         return user
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
+
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(read_only=True)
+    assigned_tags_ids = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ['id', 'username', 'profile']
+        fields = ['id', 'username', 'profile', 'assigned_tags_ids']
+
+    def get_assigned_tags_ids(self, obj):
+        if obj.profile.user_type == 'redactor':
+            return obj.assigned_tags.all()
+        return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if ret.get('assigned_tags_ids') is None:
+            ret.pop('assigned_tags_ids')
+        return ret
 
 class EntrySerializer(serializers.ModelSerializer):
 
@@ -37,10 +54,18 @@ class EntrySerializer(serializers.ModelSerializer):
         read_only=True
     )
     author = UserSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    tag_ids = serializers.PrimaryKeyRelatedField(
+        source='tags',
+        many=True,
+        queryset=Tag.objects.all(),
+        write_only=True
+    )
     user_vote = serializers.SerializerMethodField()
     class Meta:
         model = Entry
-        fields = ['id', 'author', 'title','is_truthful', 'content','sources', 'articles', 'upvotes_count', 'user_vote', 'created_at']
+        fields = ['id', 'author', 'title','is_truthful', 'content','sources', 'articles', 'tags', 'tag_ids',
+                  'upvotes_count', 'user_vote', 'created_at']
 
     def get_user_vote(self, obj):
         user = self.context.get('request').user
