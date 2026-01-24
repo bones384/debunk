@@ -22,6 +22,7 @@ class Entry(models.Model):
     articles = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_truthful = models.BooleanField()
+    
     def __str__(self):
         return self.title
 
