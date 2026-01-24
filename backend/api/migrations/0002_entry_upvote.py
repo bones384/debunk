@@ -23,6 +23,7 @@ class Migration(migrations.Migration):
                 ('articles', models.JSONField(blank=True, default=list)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='posts', to=settings.AUTH_USER_MODEL)),
+                ('is_truthful', models.BooleanField())
             ],
         ),
         migrations.CreateModel(
