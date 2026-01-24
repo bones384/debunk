@@ -5,6 +5,8 @@ from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from collections import Counter
+from urllib.parse import urlparse
 
 from .models import Profile, Upvote, Entry
 from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer
@@ -100,7 +102,6 @@ class EntryDetailView(generics.RetrieveUpdateDestroyAPIView):
         return super().get_permissions()
 
 
-
 class EntryRateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -117,3 +118,50 @@ class EntryRateView(APIView):
             entry=entry
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class RankingView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        fake_entries = Entry.objects.filter(is_truthful='false')
+        domain_counter = Counter()
+
+        for entry in fake_entries:
+
+            links_to_analyze = entry.articles or []
+            for link in links_to_analyze:
+                if not link: continue
+                
+                try:
+                    parsed_uri = urlparse(link)
+                    domain = parsed_uri.netloc.lower()
+                    
+                    if domain.startswith('www.'):
+                        domain = domain[4:]
+                    
+                    if domain:
+                        domain_counter[domain] += 1
+                except Exception:
+                    continue
+
+        sorted_domains = domain_counter.most_common()        
+        ranking_list = []
+        current_rank = 0
+        last_count = -1
+        
+        for i, (domain, count) in enumerate(sorted_domains):
+            if count != last_count:
+                current_rank += 1
+            
+            last_count = count
+
+            if current_rank > 25:
+                break
+
+            ranking_list.append({
+                "rank": current_rank,
+                "domain": domain,
+                "count": count
+            })
+
+        return Response(ranking_list)
