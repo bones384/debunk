@@ -123,7 +123,7 @@ class RankingView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        fake_entries = Entry.objects.filter(is_truthful='false')
+        fake_entries = Entry.objects.filter(is_truthful=False)
         domain_counter = Counter()
 
         for entry in fake_entries:

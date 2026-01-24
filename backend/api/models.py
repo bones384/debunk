@@ -15,19 +15,16 @@ class Profile(models.Model):
         default=AccountType.STANDARD
     )
 class Entry(models.Model):
-    verdict_choices = [('unverified','unverified'),
-    ('true','true'),
-    ('false','false')]
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     title = models.CharField(max_length=200)
     content = models.TextField()
     sources = models.JSONField(default=list, blank=True)
     articles = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_truthful = models.CharField(max_length=10, choices=verdict_choices,default='unverified')
+    is_truthful = models.BooleanField()
     
     def __str__(self):
-        return f"{self.title} ({self.get_is_truthful_display()})"
+        return self.title
 
 class Upvote(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="upvotes")
