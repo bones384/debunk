@@ -3,7 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.12 (debunk)" />
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_X" default="true" project-jdk-name="openjdk-25" project-jdk-type="JavaSDK">
-    <output url="file://$PROJECT_DIR$/out" />
-  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 virtualenv at D:\Projekty Python\debunkTest\env" project-jdk-type="Python SDK" />
 </project>
