@@ -190,6 +190,6 @@ class TagDetailView(APIView):
     def delete(self, request, pk):
         if request.user.is_staff:
             tag = get_object_or_404(Tag, pk=pk)
-            tag.posts.clear()
+            # tag.posts.clear()
             tag.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from api.models import Profile, Entry, Tag
+from api.models import Profile, Entry, Tag, EntryTagAssignment
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -38,7 +38,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_assigned_tags_ids(self, obj):
         if obj.profile.user_type == 'redactor':
-            return obj.assigned_tags.all()
+            rows = obj.assigned_tags.all()
+            return TagSerializer([row.tag for row in rows], many=True).data
         return None
 
     def to_representation(self, instance):
@@ -54,18 +55,32 @@ class EntrySerializer(serializers.ModelSerializer):
         read_only=True
     )
     author = UserSerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
-    tag_ids = serializers.PrimaryKeyRelatedField(
-        source='tags',
-        many=True,
-        queryset=Tag.objects.all(),
-        write_only=True
-    )
+    tags = serializers.SerializerMethodField(read_only=True)
+    tag_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+
     user_vote = serializers.SerializerMethodField()
     class Meta:
         model = Entry
         fields = ['id', 'author', 'title','is_truthful', 'content','sources', 'articles', 'tags', 'tag_ids',
                   'upvotes_count', 'user_vote', 'created_at']
+
+    def create(self, validated_data):
+        tag_ids = validated_data.pop("tag_ids", [])
+        req = self.context.get("request")
+
+        entry = Entry.objects.create(
+            **validated_data
+        )
+
+        for tag_id in tag_ids:
+            tag = Tag.objects.get(id=tag_id)
+            EntryTagAssignment.objects.create(entry=entry, tag=tag)
+
+        return entry
+
+    def get_tags(self, obj):
+        rows = obj.assigned_tags.all()
+        return TagSerializer([row.tag for row in rows], many=True).data
 
     def get_user_vote(self, obj):
         user = self.context.get('request').user
