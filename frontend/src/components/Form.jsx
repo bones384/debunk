@@ -7,6 +7,7 @@ function Form({ route, method, showSwitchLinks = true }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); 
 
   const navigate = useNavigate();
   const isLogin = method === "login";
@@ -30,7 +31,11 @@ function Form({ route, method, showSwitchLinks = true }) {
         navigate("/login");
       }
     } catch (error) {
-      alert(error);
+      if (error.response && error.response.status === 401) {
+       setErrorMessage("Niepoprawna nazwa użytkownika lub hasło");
+      } else {
+       setErrorMessage("Wystąpił błąd podczas logowania. Spróbuj ponownie.");
+      }
     } finally {
       setLoading(false);
     }
@@ -61,6 +66,13 @@ function Form({ route, method, showSwitchLinks = true }) {
           required
         />
       </div>
+
+      {/* Wyświetlamy błąd tylko jeśli errorMessage nie jest pusty */}
+      {errorMessage && (
+        <div className="text-danger small mb-3">
+          {errorMessage}
+        </div>
+      )}
 
       <button className="btn btn-primary" type="submit" disabled={loading}>
         {loading ? "Please wait..." : title}

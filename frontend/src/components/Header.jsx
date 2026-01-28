@@ -11,6 +11,10 @@ export default function Header() {
     Boolean(localStorage.getItem(ACCESS_TOKEN))
   );
 
+  const isAuthPage = window.location.pathname === "/auth" || 
+                     window.location.pathname === "/login" || 
+                     window.location.pathname === "/register";
+
   useEffect(() => {
     const syncAuth = () => {
       setLoggedIn(Boolean(localStorage.getItem(ACCESS_TOKEN)));
@@ -48,22 +52,25 @@ export default function Header() {
           {loggedIn ? (
             <div className="ms-auto d-flex align-items-center">
               {/* Admin button */}
-              {isSuperuser && (
-                <Link
-                  to="/konta"
-                  className="btn btn-outline-light btn-sm py-0 px-2 me-2"
-                >
-                  Konta
-                </Link>
+             {isSuperuser && (
+              <Link
+                to="/konta"
+                className="nav-link-custom me-3"
+              >
+                Konta
+              </Link>
               )}
 
               <span className="text-white small me-2 d-flex align-items-center lh-1">
                 <i className="fa-solid fa-user me-1" aria-hidden="true"></i>
                 <span className="fw-bolder">{user?.username}</span>
-                {user?.profile?.user_type && (
+              {isSuperuser ? (
+               <span className="fw-normal ms-2"> | administrator</span>
+              ) : (
+                user?.profile?.user_type && (
                   <span className="fw-normal ms-2"> | {user.profile.user_type}</span>
-                )}
-                {isSuperuser && <span className="fw-normal ms-2"> | admin</span>}
+                )
+              )}
               </span>
 
               <button
@@ -75,9 +82,11 @@ export default function Header() {
               </button>
             </div>
           ) : (
-            <Link to="/auth" className="btn btn-outline-light btn-sm ms-auto py-0 px-2">
-              Zaloguj / Zarejestruj
-            </Link>
+            !isAuthPage && (
+              <Link to="/auth" className="btn btn-outline-light btn-sm ms-auto py-0 px-2">
+                Zaloguj / Zarejestruj
+              </Link>
+            )
           )}
         </div>
       </div>
