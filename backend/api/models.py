@@ -20,7 +20,7 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
-class TagsAssignment(models.Model):
+class RedactorTagAssignment(models.Model):
     redactor = models.ForeignKey(User, limit_choices_to={'user_type': "Redactor"}, on_delete=models.CASCADE, related_name="assigned_tags")
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="assigned_redactors")
 
@@ -38,12 +38,24 @@ class Entry(models.Model):
     content = models.TextField()
     sources = models.JSONField(default=list, blank=True)
     articles = models.JSONField(default=list, blank=True)
-    tags = models.ManyToManyField(Tag, related_name="posts")
+    # tags = models.ManyToManyField(Tag, related_name="posts")
     created_at = models.DateTimeField(auto_now_add=True)
     is_truthful = models.BooleanField()
     
     def __str__(self):
         return self.title
+
+class EntryTagAssignment(models.Model):
+    entry = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="assigned_tags")
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="assigned_entries")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["entry", "tag"],
+                name="unique_entry_tag_assignment"
+            )
+        ]
 
 class Upvote(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="upvotes")
