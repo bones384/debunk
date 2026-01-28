@@ -8,8 +8,8 @@ from django.shortcuts import get_object_or_404
 from collections import Counter
 from urllib.parse import urlparse
 
-from .models import Profile, Upvote, Entry
-from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer
+from .models import Profile, Upvote, Entry, Tag
+from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, TagSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
 from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, \
     IsAuthor, IsRedactor
@@ -165,3 +165,31 @@ class RankingView(APIView):
             })
 
         return Response(ranking_list)
+
+class TagListCreate(generics.ListCreateAPIView):
+    serializer_class = TagSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        if self.request.method == "PUT" or self.request.method == "POST":
+            return [IsAdminUser()]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        return Tag.objects.all()
+
+class TagDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        tag = get_object_or_404(Tag, pk=pk)
+        return Response(TagSerializer(tag).data, status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, pk):
+        if request.user.is_staff:
+            tag = get_object_or_404(Tag, pk=pk)
+            # tag.posts.clear()
+            tag.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
