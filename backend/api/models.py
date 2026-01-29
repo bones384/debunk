@@ -68,3 +68,32 @@ class Upvote(models.Model):
                 name="unique_user_entry_like"
             )
         ]
+
+def get_file_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    return os.path.join('application_scans', filename)
+
+
+class Application(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="applications")
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    
+    tags = models.JSONField(default=list, blank=True)
+    
+    is_accepted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Application {self.id} from {self.author}"
+
+class ApplicationDocument(models.Model):
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='scans')
+    
+    image = models.ImageField(upload_to=get_file_path)
+    
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Scan from application {self.application.id}"

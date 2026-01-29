@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from api.models import Profile, Entry, Tag, EntryTagAssignment
+from .models import Profile, Entry, Tag, EntryTagAssignment, Application, ApplicationDocument
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -95,3 +95,56 @@ class CurrentUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "profile", "is_superuser"]
+
+class ApplicationDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationDocument
+        fields = ['id', 'image', 'uploaded_at']
+
+class ApplicationListSerializer(serializers.ModelSerializer):
+    author = serializers.ReadOnlyField(source='author.username')
+    
+    class Meta:
+        model = Application
+        fields = ['id', 'author', 'title', 'tags', 'is_accepted', 'created_at']
+
+class ApplicationDetailSerializer(serializers.ModelSerializer):
+    author = serializers.ReadOnlyField(source='author.username')
+    uploaded_scans = ApplicationDocumentSerializer(source='scans', many=True, read_only=True)
+
+    class Meta:
+        model = Application
+        fields = [
+            'id', 'author', 'title', 'content', 'tags', 
+            'is_accepted', 'created_at', 'uploaded_scans'
+        ]
+
+class ApplicationCreateSerializer(serializers.ModelSerializer):
+    scans = serializers.ListField(
+        child=serializers.ImageField(),
+        write_only=True,
+        required=False
+    )
+    uploaded_scans = ApplicationDocumentSerializer(source='scans', many=True, read_only=True)
+    
+    author = serializers.ReadOnlyField(source='author.username')
+
+    class Meta:
+        model = Application
+        fields = [
+            'id', 'author', 'title', 'content', 'tags', 
+            'scans', 'uploaded_scans', 'created_at' 
+        ]
+
+    def create(self, validated_data):
+        scans_data = validated_data.pop('scans', [])
+        
+        request = self.context.get('request')
+        validated_data['author'] = request.user
+
+        application = Application.objects.create(**validated_data)
+
+        for scan_image in scans_data:
+            ApplicationDocument.objects.create(application=application, image=scan_image)
+
+        return application

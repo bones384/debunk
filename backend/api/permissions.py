@@ -1,4 +1,7 @@
 from rest_framework import permissions
+from .models import Application
+
+
 class IsAuthorOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
@@ -63,4 +66,16 @@ class IsRedactorOrReadOnlyObject(permissions.BasePermission):
 class IsAuthor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.author==request.user
-    
+
+
+class CanCreateApplication(permissions.BasePermission):
+    message = "Only regular users without open tickets can create new requests"
+
+    def has_permission(self, request, view):
+        if request.user.is_staff: 
+            return False
+            
+        if Application.objects.filter(author=request.user, is_accepted=False).exists():
+            return False
+            
+        return True
