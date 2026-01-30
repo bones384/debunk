@@ -11,9 +11,9 @@ export default function Header() {
     Boolean(localStorage.getItem(ACCESS_TOKEN))
   );
 
-  const isAuthPage = window.location.pathname === "/auth" || 
-                     window.location.pathname === "/login" || 
-                     window.location.pathname === "/register";
+  const isAuthPage = window.location.pathname === "/auth" ||
+    window.location.pathname === "/login" ||
+    window.location.pathname === "/register";
 
   useEffect(() => {
     const syncAuth = () => {
@@ -43,34 +43,40 @@ export default function Header() {
       <div className="container py-0">
         <div
           className="mx-auto w-100 d-flex align-items-center py-0"
-          style={{ maxWidth: 900 }}
+          style={{ maxWidth: 1200 }}
         >
-          <Link to="/" className="navbar-brand m-0 fw-bold fs-4 lh-1 brand-debunk">
+          <Link to="/" className="navbar-brand m-0 fw-bold fs-4 lh-1 brand-debunk me-4">
             Debunk
+          </Link>
+
+          <Link
+            to="/ranking"
+            className="nav-link-custom me-auto"
+          >
+            Ranking
           </Link>
 
           {loggedIn ? (
             <div className="ms-auto d-flex align-items-center">
-              {/* Admin button */}
-             {isSuperuser && (
-              <Link
-                to="/konta"
-                className="nav-link-custom me-3"
-              >
-                Konta
-              </Link>
+              {isSuperuser && (
+                <Link
+                  to="/konta"
+                  className="nav-link-custom me-4"
+                >
+                  Konta
+                </Link>
               )}
 
               <span className="text-white small me-2 d-flex align-items-center lh-1">
                 <i className="fa-solid fa-user me-1" aria-hidden="true"></i>
                 <span className="fw-bolder">{user?.username}</span>
-              {isSuperuser ? (
-               <span className="fw-normal ms-2"> | administrator</span>
-              ) : (
-                user?.profile?.user_type && (
-                  <span className="fw-normal ms-2"> | {user.profile.user_type}</span>
-                )
-              )}
+                {isSuperuser ? (
+                  <span className="fw-normal ms-2"> | administrator</span>
+                ) : (
+                  user?.profile?.user_type && (
+                    <span className="fw-normal ms-2"> | {user.profile.user_type}</span>
+                  )
+                )}
               </span>
 
               <button

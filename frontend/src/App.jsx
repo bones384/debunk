@@ -10,6 +10,7 @@ import NewEntry from "./pages/NewEntry.jsx";
 import EditEntry from "./pages/EditEntry.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Accounts from "./pages/Accounts.jsx";
+import Ranking from "./pages/Ranking.jsx";
 
 function Centered({ children }) {
   return <div className="text-center">{children}</div>;
@@ -30,10 +31,11 @@ function App() {
           <div className="w-100 d-flex" style={{ maxWidth: 1200 }}>
             <div className="card shadow-lg border-0 flex-grow-1 rounded-0">
               <div className="card-body p-4 p-md-5">
-                <div style={{ paddingTop: "12vh" }}>
+                <div style={{ paddingTop: "30px" }}>
                   <Routes>
                     <Route path="/" element={<Centered><Index /></Centered>} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/ranking" element={<Ranking />} />
 
                     <Route
                       path="/entries/new"
