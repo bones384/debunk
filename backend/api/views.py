@@ -113,6 +113,7 @@ class EntryListCreate(generics.ListCreateAPIView):
         user = self.request.user
         return Entry.objects.all()
 
+
     def perform_create(self, serializer):
 
             serializer.save(author=self.request.user)
@@ -157,17 +158,18 @@ class RankingView(APIView):
     def get(self, request):
         fake_entries = Entry.objects.filter(is_truthful=False)
         domain_counter = Counter()
-
         for entry in fake_entries:
 
-            links_to_analyze = entry.articles or []
+            links_to_analyze = entry.articles or [] #this is empty!
             for link in links_to_analyze:
                 if not link: continue
-                
                 try:
+                    if "://" not in link:
+                        link = "http://" + link
                     parsed_uri = urlparse(link)
                     domain = parsed_uri.netloc.lower()
-                    
+
+
                     if domain.startswith('www.'):
                         domain = domain[4:]
                     
