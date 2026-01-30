@@ -44,7 +44,7 @@ function Index() {
     user?.is_superuser === true;
 
   // create tylko redactor
-  const canCreateEntry = !!user && isRedactor;
+  const canCreateEntry = !!user && isRedactor && !isAdmin;
 
   const canEditEntry = (entry) => {
     if (!user) return false;
@@ -101,7 +101,10 @@ function Index() {
   };
 
   const toggleUpvote = async (entry) => {
-    if (!user) return; // gość nie głosuje
+  if (!user) {
+    navigate("/auth"); // Jeśli nie ma usera, przenieś go do logowania
+    return;
+  }
 
     const id = entry?.id;
     if (!id) return;
@@ -207,7 +210,7 @@ function Index() {
                           ? "Usuń podbicie"
                           : "Podbij"
                     }
-                    disabled={!id || !!busyById[id] || !user}
+                    disabled={!id || !!busyById[id]}
                     onClick={() => toggleUpvote(entry)}
                   >
                     {upvoted ? "✓ Podbito" : "+ Podbij"}

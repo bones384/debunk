@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
+import useCurrentUser from "../components/useCurrentUser.jsx";
 
 const ROLE_STANDARD = "standard";
 const ROLE_REDACTOR = "redactor";
@@ -9,6 +10,7 @@ export default function Accounts() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
+  const { user } = useCurrentUser();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -72,9 +74,11 @@ export default function Accounts() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => {
-                const role = u?.profile?.user_type || "(brak)";
-                const isBusy = busyId === u.id;
+              {users
+                .filter((u) => u.id !== user?.id) 
+                .map((u) => {
+                  const role = u?.profile?.user_type || "(brak)";
+                  const isBusy = busyId === u.id;
 
                 return (
                   <tr key={u.id}>
@@ -84,7 +88,7 @@ export default function Accounts() {
                     <td>
                       <div className="d-flex gap-2 flex-wrap">
                         <button
-                          className="btn btn-sm btn-outline-primary"
+                          className="custom-admin-btn" // Nowa klasa
                           disabled={isBusy || role === ROLE_REDACTOR}
                           onClick={() => setRole(u.id, ROLE_REDACTOR)}
                         >
@@ -92,7 +96,7 @@ export default function Accounts() {
                         </button>
 
                         <button
-                          className="btn btn-sm btn-outline-secondary"
+                          className="custom-admin-btn" // Ta sama klasa dla obu
                           disabled={isBusy || role === ROLE_STANDARD}
                           onClick={() => setRole(u.id, ROLE_STANDARD)}
                         >
