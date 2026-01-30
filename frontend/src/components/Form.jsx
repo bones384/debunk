@@ -10,8 +10,12 @@ function Form({ route, method, showSwitchLinks = true }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  // ✅ Checkbox: po rejestracji przejdź do formularza prośby
+  const [goToEditorRequest, setGoToEditorRequest] = useState(false);
+
   const navigate = useNavigate();
   const isLogin = method === "login";
+  const isRegister = method === "register";
   const title = isLogin ? "Zaloguj" : "Zarejestruj";
 
   const handleSubmit = async (e) => {
@@ -20,10 +24,13 @@ function Form({ route, method, showSwitchLinks = true }) {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (method === "register") {
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{6,}$/;
+    if (isRegister) {
+      const passwordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{6,}$/;
       if (!passwordRegex.test(password)) {
-        setErrorMessage("Hasło musi mieć min. 6 znaków, zawierać dużą i małą literę, cyfrę oraz znak specjalny.");
+        setErrorMessage(
+          "Hasło musi mieć min. 6 znaków, zawierać dużą i małą literę, cyfrę oraz znak specjalny."
+        );
         setLoading(false);
         return;
       }
@@ -32,23 +39,37 @@ function Form({ route, method, showSwitchLinks = true }) {
     try {
       const res = await api.post(route, { username, password });
 
-      if (method === "login") {
+      if (isLogin) {
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
         window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
         navigate("/");
-      } else {
-        setSuccessMessage("Konto utworzone pomyślnie! Możesz się teraz zalogować.");
-        setUsername("");
-        setPassword("");
+        return;
       }
+
+      // ✅ REGISTER
+      // Jeśli user zaznaczył checkbox, to od razu idziemy do formularza prośby
+      if (goToEditorRequest) {
+        navigate("/zgloszenia/new");
+        return;
+      }
+
+      // Domyślne zachowanie (jak było)
+      setSuccessMessage("Konto utworzone pomyślnie! Możesz się teraz zalogować.");
+      setUsername("");
+      setPassword("");
+      setGoToEditorRequest(false);
     } catch (error) {
       console.log("Pełny błąd z serwera:", error.response?.data);
 
       if (error.response && error.response.status === 400) {
         const data = error.response.data;
 
-        if (data.username && (data.username[0].includes("already exists") || data.username[0].includes("zajęta"))) {
+        if (
+          data.username &&
+          (data.username[0].includes("already exists") ||
+            data.username[0].includes("zajęta"))
+        ) {
           setErrorMessage("Wybrana nazwa użytkownika jest już zajęta.");
         } else if (data.password) {
           setErrorMessage("Błąd hasła: " + data.password[0]);
@@ -91,17 +112,27 @@ function Form({ route, method, showSwitchLinks = true }) {
         />
       </div>
 
-      {errorMessage && (
-        <div className="text-danger small mb-3">
-          {errorMessage}
+      {/* ✅ Checkbox tylko na rejestracji */}
+      {isRegister && (
+        <div className="form-check mb-3">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="goToEditorRequest"
+            checked={goToEditorRequest}
+            onChange={(e) => setGoToEditorRequest(e.target.checked)}
+          />
+          <label className="form-check-label" htmlFor="goToEditorRequest">
+            Po rejestracji przejdź do formularza prośby o status Redaktora
+          </label>
         </div>
       )}
 
-      {successMessage &&
-        <div className="alert alert-success small py-2 mb-3">
-          {successMessage}
-        </div>
-      }
+      {errorMessage && <div className="text-danger small mb-3">{errorMessage}</div>}
+
+      {successMessage && (
+        <div className="alert alert-success small py-2 mb-3">{successMessage}</div>
+      )}
 
       <button className="btn btn-primary" type="submit" disabled={loading}>
         {loading ? "Please wait..." : title}

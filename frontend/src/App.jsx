@@ -6,11 +6,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+
 import NewEntry from "./pages/NewEntry.jsx";
 import EditEntry from "./pages/EditEntry.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Accounts from "./pages/Accounts.jsx";
 import Ranking from "./pages/Ranking.jsx";
+
+import EditorRequest from "./pages/EditorRequest.jsx";
+import RequestsList from "./pages/RequestsList.jsx";
+import RequestDetail from "./pages/RequestDetail.jsx";
 
 function Centered({ children }) {
   return <div className="text-center">{children}</div>;
@@ -34,8 +41,38 @@ function App() {
                 <div style={{ paddingTop: "30px" }}>
                   <Routes>
                     <Route path="/" element={<Centered><Index /></Centered>} />
-                    <Route path="/auth" element={<Auth />} />
                     <Route path="/ranking" element={<Ranking />} />
+
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+
+                    <Route
+                      path="/zgloszenia/new"
+                      element={
+                        <ProtectedRoute>
+                          <EditorRequest />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path="/prosby"
+                      element={
+                        <ProtectedRoute requireSuperuser>
+                          <RequestsList />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path="/prosby/:id"
+                      element={
+                        <ProtectedRoute requireSuperuser>
+                          <RequestDetail />
+                        </ProtectedRoute>
+                      }
+                    />
 
                     <Route
                       path="/entries/new"
