@@ -1,20 +1,26 @@
+import os
+
+from django.conf import settings
+from django.db import transaction
 from django.shortcuts import render
 from django.contrib.auth.models import User
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, parsers
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.http import FileResponse, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404
 from collections import Counter
 from urllib.parse import urlparse
 
-from .models import Profile, Upvote, Entry, Tag
+from .models import Profile, Upvote, Entry, Tag, Application, ApplicationDocument, AccountType, RedactorTagAssignment
 from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, TagSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
-from .permissions import IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject, \
-    IsAuthor, IsRedactor
+from .permissions import (IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject,
+    IsAuthor, IsRedactor, CanCreateApplication)
 from .serializers import (
-    UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer
+    UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer, ApplicationCreateSerializer, 
+    ApplicationListSerializer, ApplicationDetailSerializer
 )
 
 
@@ -27,12 +33,38 @@ class CreateUserView(generics.CreateAPIView):
 class ChangeProfileTypeView(generics.UpdateAPIView):
     queryset = Profile.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [permissions.IsAdminUser]
 
     def get_object(self):
-        # admin chooses which user to modify
         user_id = self.kwargs.get("pk")
-        return Profile.objects.get(user_id=user_id)
+        return get_object_or_404(Profile, user_id=user_id)
+
+    def perform_update(self, serializer):
+        with transaction.atomic():
+            
+            profile = serializer.save()
+            user = profile.user
+            new_role = profile.user_type
+
+            if new_role == AccountType.REDACTOR:
+                pending_app = Application.objects.filter(author=user, is_accepted=False).first()
+                
+                if pending_app:
+                    pending_app.is_accepted = True
+                    pending_app.save()
+                    tags_ids = pending_app.tags
+                    
+                    if tags_ids:
+                        tags_to_add = Tag.objects.filter(id__in=tags_ids)
+                        
+                        for tag in tags_to_add:
+                            RedactorTagAssignment.objects.get_or_create(
+                                redactor=user, 
+                                tag=tag
+                            )
+            elif new_role == AccountType.STANDARD:
+                RedactorTagAssignment.objects.filter(redactor=user).delete()
+                Application.objects.filter(author=user, is_accepted=True).delete()
 
 
 
@@ -193,3 +225,50 @@ class TagDetailView(APIView):
             # tag.posts.clear()
             tag.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ApplicationListCreateView(generics.ListCreateAPIView):
+    queryset = Application.objects.all()
+    
+    def get_serializer_class(self):
+        
+        if self.request.method == 'POST':
+            return ApplicationCreateSerializer
+        return ApplicationListSerializer
+
+    def get_permissions(self):
+
+        if self.request.method == 'POST':
+            return [permissions.IsAuthenticated(), CanCreateApplication()]
+        return [permissions.IsAdminUser()]
+
+
+class ApplicationDetailView(generics.RetrieveDestroyAPIView):
+    queryset = Application.objects.all()
+    serializer_class = ApplicationDetailSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class UserAcceptedApplicationView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        accepted_app = Application.objects.filter(author=user, is_accepted=True).last()
+        
+        if accepted_app:
+            serializer = ApplicationDetailSerializer(accepted_app)
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class ProtectedMediaView(APIView):
+    permission_classes = [IsAdminUser]
+    def get(self, request, path):
+        file_path = os.path.join(settings.MEDIA_ROOT, path)
+
+        if not os.path.exists(file_path):
+            raise Http404
+
+        return FileResponse(open(file_path, "rb"))
