@@ -1,15 +1,19 @@
+import os
+
+from django.conf import settings
+from django.db import transaction
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions, status, parsers
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.http import FileResponse, HttpResponseForbidden
+from django.http import FileResponse, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404
 from collections import Counter
 from urllib.parse import urlparse
 
-from .models import Profile, Upvote, Entry, Tag, Application, ApplicationDocument
+from .models import Profile, Upvote, Entry, Tag, Application, ApplicationDocument, AccountType, RedactorTagAssignment
 from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, TagSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
 from .permissions import (IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject,
@@ -256,3 +260,15 @@ class UserAcceptedApplicationView(APIView):
             return Response(serializer.data)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class ProtectedMediaView(APIView):
+    permission_classes = [IsAdminUser]
+    def get(self, request, path):
+        file_path = os.path.join(settings.MEDIA_ROOT, path)
+
+        if not os.path.exists(file_path):
+            raise Http404
+
+        return FileResponse(open(file_path, "rb"))

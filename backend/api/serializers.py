@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
+from django.db.models.fields.files import ImageFieldFile
 from rest_framework import serializers
+from rest_framework.fields import ImageField
 
 from .models import Profile, Entry, Tag, EntryTagAssignment, Application, ApplicationDocument
 
@@ -97,19 +99,20 @@ class CurrentUserSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "profile", "is_superuser"]
 
 class ApplicationDocumentSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = ApplicationDocument
         fields = ['id', 'image', 'uploaded_at']
 
 class ApplicationListSerializer(serializers.ModelSerializer):
-    author = serializers.ReadOnlyField(source='author.username')
+    author = UserSerializer(read_only=True)
     
     class Meta:
         model = Application
         fields = ['id', 'author', 'title', 'tags', 'is_accepted', 'created_at']
 
 class ApplicationDetailSerializer(serializers.ModelSerializer):
-    author = serializers.ReadOnlyField(source='author.username')
+    author = UserSerializer(read_only=True)
     uploaded_scans = ApplicationDocumentSerializer(source='scans', many=True, read_only=True)
 
     class Meta:
@@ -123,7 +126,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
     scans = serializers.ListField(
         child=serializers.ImageField(),
         write_only=True,
-        required=False
+        required=True
     )
     uploaded_scans = ApplicationDocumentSerializer(source='scans', many=True, read_only=True)
     
@@ -135,7 +138,13 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
             'id', 'author', 'title', 'content', 'tags', 
             'scans', 'uploaded_scans', 'created_at' 
         ]
+        extra_kwargs = {
+            'title': {'required': True},
+            'content': {'required': True},
+            'tags': {'required': True}
 
+
+        }
     def create(self, validated_data):
         scans_data = validated_data.pop('scans', [])
         
