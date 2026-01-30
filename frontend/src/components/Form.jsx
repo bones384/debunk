@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api";
 import { useNavigate, Link } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN, AUTH_CHANGED_EVENT } from "../constants.js";
@@ -6,24 +6,34 @@ import { ACCESS_TOKEN, REFRESH_TOKEN, AUTH_CHANGED_EVENT } from "../constants.js
 function Form({ route, method, showSwitchLinks = true }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [goToEditorRequest, setGoToEditorRequest] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-
-  // ✅ Checkbox: po rejestracji przejdź do formularza prośby
-  const [goToEditorRequest, setGoToEditorRequest] = useState(false);
 
   const navigate = useNavigate();
   const isLogin = method === "login";
   const isRegister = method === "register";
   const title = isLogin ? "Zaloguj" : "Zarejestruj";
 
+  useEffect(() => {
+    
+    if (!isRegister) setGoToEditorRequest(false);
+  }, [isRegister]);
+
+  const saveTokensAndRedirect = (access, refresh, redirectTo) => {
+    localStorage.setItem(ACCESS_TOKEN, access);
+    localStorage.setItem(REFRESH_TOKEN, refresh);
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+    navigate(redirectTo);
+  };
+
   const handleSubmit = async (e) => {
     setLoading(true);
     e.preventDefault();
     setErrorMessage("");
-    setSuccessMessage("");
 
+    
     if (isRegister) {
       const passwordRegex =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{6,}$/;
@@ -37,28 +47,20 @@ function Form({ route, method, showSwitchLinks = true }) {
     }
 
     try {
+     
       const res = await api.post(route, { username, password });
 
       if (isLogin) {
-        localStorage.setItem(ACCESS_TOKEN, res.data.access);
-        localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
-        navigate("/");
+        
+        saveTokensAndRedirect(res.data.access, res.data.refresh, "/");
         return;
       }
 
-      // ✅ REGISTER
-      // Jeśli user zaznaczył checkbox, to od razu idziemy do formularza prośby
-      if (goToEditorRequest) {
-        navigate("/zgloszenia/new");
-        return;
-      }
+     
+      const tokenRes = await api.post("/api/auth/token/", { username, password });
 
-      // Domyślne zachowanie (jak było)
-      setSuccessMessage("Konto utworzone pomyślnie! Możesz się teraz zalogować.");
-      setUsername("");
-      setPassword("");
-      setGoToEditorRequest(false);
+      const redirectTo = goToEditorRequest ? "/zgloszenia/new" : "/";
+      saveTokensAndRedirect(tokenRes.data.access, tokenRes.data.refresh, redirectTo);
     } catch (error) {
       console.log("Pełny błąd z serwera:", error.response?.data);
 
@@ -112,7 +114,7 @@ function Form({ route, method, showSwitchLinks = true }) {
         />
       </div>
 
-      {/* ✅ Checkbox tylko na rejestracji */}
+      {/* Checkbox tylko na rejestracji */}
       {isRegister && (
         <div className="form-check mb-3">
           <input
@@ -129,10 +131,6 @@ function Form({ route, method, showSwitchLinks = true }) {
       )}
 
       {errorMessage && <div className="text-danger small mb-3">{errorMessage}</div>}
-
-      {successMessage && (
-        <div className="alert alert-success small py-2 mb-3">{successMessage}</div>
-      )}
 
       <button className="btn btn-primary" type="submit" disabled={loading}>
         {loading ? "Please wait..." : title}
