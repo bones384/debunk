@@ -13,11 +13,11 @@ from django.shortcuts import get_object_or_404
 from collections import Counter
 from urllib.parse import urlparse
 
-from .models import Profile, Upvote, Entry, Tag, Application, ApplicationDocument, AccountType, RedactorTagAssignment
-from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, TagSerializer
+from .models import Profile, Upvote, Entry, Tag, Application, ApplicationDocument, AccountType, RedactorTagAssignment, Request
+from .serializers import UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, TagSerializer, RequestSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
 from .permissions import (IsAuthorOrAdmin, IsAuthorOrAdminOrReadOnly, IsAdminOrSelf, IsRedactorOrReadOnlyObject,
-    IsAuthor, IsRedactor, CanCreateApplication)
+    IsAuthor, IsRedactor, CanCreateApplication, IsRedactorOrAdmin)
 from .serializers import (
     UserRegisterSerializer, UserSerializer, UserProfileSerializer, EntrySerializer, CurrentUserSerializer, ApplicationCreateSerializer, 
     ApplicationListSerializer, ApplicationDetailSerializer
@@ -272,3 +272,98 @@ class ProtectedMediaView(APIView):
             raise Http404
 
         return FileResponse(open(file_path, "rb"))
+
+class RequestListCreate(generics.ListCreateAPIView):
+    serializer_class = RequestSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAdminUser()]
+        if self.request.method == "PUT" or self.request.method == "POST":
+            return [IsAuthenticated()]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        return Request.objects.filter(entry_id__isnull=True)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+class RequestDetailView(APIView):
+    def get(self, request, pk):
+        req = get_object_or_404(Request, pk=pk)
+        if request.user.is_staff or request.user.id==req.redactor:
+            return Response(RequestSerializer(req).data, status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, pk):
+        if request.user.is_staff:
+            req = get_object_or_404(Request, pk=pk)
+            req.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class RequestUnassignedListView(generics.ListCreateAPIView):
+    serializer_class = RequestSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsRedactorOrAdmin()]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        unassigned_requests = Request.objects.filter(entry_id__isnull=True)
+        if self.request.user.is_staff:
+            return unassigned_requests
+
+        rows_user = self.request.user.assigned_tags.all()
+        tag_ids_user = [row.tag.id for row in rows_user]
+
+        result_req = []
+        for request in unassigned_requests:
+            rows_req = request.assigned_tags.all()
+            tag_ids_req = [row.tag.id for row in rows_req]
+            for tag_id_user in tag_ids_user:
+                if tag_id_user in tag_ids_req:
+                    result_req.append(request)
+                    break
+
+        return result_req
+
+class RequestAssignedListView(ListAPIView):
+    serializer_class = RequestSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsRedactor()]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        return Request.objects.filter(redactor=self.request.user.id)
+
+class RequestClosedListView(ListAPIView):
+    serializer_class = RequestSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAdminUser()]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        return Request.objects.filter(entry_id__isnull=False)
+
+class RequestAssignView(APIView):
+    def post(self, request, pk):
+        req = get_object_or_404(Request, pk=pk)
+        if request.user.user_type == 'redactor':
+            req.redactor = request.user.id
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, pk):
+        req = get_object_or_404(Request, pk=pk)
+        if request.user.is_staff or request.user.id==req.redactor:
+            req.redactor.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

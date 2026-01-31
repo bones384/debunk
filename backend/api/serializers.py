@@ -3,7 +3,7 @@ from django.db.models.fields.files import ImageFieldFile
 from rest_framework import serializers
 from rest_framework.fields import ImageField
 
-from .models import Profile, Entry, Tag, EntryTagAssignment, Application, ApplicationDocument
+from .models import Profile, Entry, Tag, EntryTagAssignment, Application, ApplicationDocument, Request, RequestTagAssignment
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -59,20 +59,31 @@ class EntrySerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     tags = serializers.SerializerMethodField(read_only=True)
     tag_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+    request_id = serializers.IntegerField(write_only=True)
 
     user_vote = serializers.SerializerMethodField()
     class Meta:
         model = Entry
-        fields = ['id', 'author', 'title','is_truthful', 'content','sources', 'articles', 'tags', 'tag_ids',
-                  'upvotes_count', 'user_vote', 'created_at']
+        fields = ['id', 'author', 'title','is_truthful', 'content','sources', 'articles',
+                  'tags', 'tag_ids', 'request_id', 'upvotes_count', 'user_vote', 'created_at']
 
     def create(self, validated_data):
+        # if not Request.objects.filter(id=request_id).exists():
+        #     raise serializers.ValidationError("Request with this id does not exist")
+        request_id = validated_data.pop("request_id")
+        request = Request.objects.get(id=request_id)
+
         tag_ids = validated_data.pop("tag_ids", [])
+
         req = self.context.get("request")
 
         entry = Entry.objects.create(
             **validated_data
         )
+
+        request.entry_id = entry.id
+        request.closed_at = entry.created_at
+        entry.articles = set(request.articles + entry.articles)
 
         for tag_id in tag_ids:
             tag = Tag.objects.get(id=tag_id)
@@ -157,3 +168,33 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
             ApplicationDocument.objects.create(application=application, image=scan_image)
 
         return application
+
+class RequestSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    tags = serializers.SerializerMethodField(read_only=True)
+    tag_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+    redactor = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Request
+        fields = ['id', 'author', 'title', 'content', 'articles',
+                  'tags', 'tag_ids', 'redactor', 'entry_id', 'created_at', 'closed_at']
+
+    def get_tags(self, obj):
+        rows = obj.assigned_tags.all()
+        return TagSerializer([row.tag for row in rows], many=True).data
+
+    def create(self, validated_data):
+        tag_ids = validated_data.pop("tag_ids", [])
+
+        req = self.context.get("request")
+
+        request = Request.objects.create(
+            **validated_data
+        )
+
+        for tag_id in tag_ids:
+            tag = Tag.objects.get(id=tag_id)
+            RequestTagAssignment.objects.create(request=request, tag=tag)
+
+        return request

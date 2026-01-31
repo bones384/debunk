@@ -46,7 +46,7 @@ class Entry(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     title = models.CharField(max_length=200)
     content = models.TextField()
-    sources = models.JSONField(default=list, blank=True)
+    sources = models.JSONField(default=list)
     articles = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_truthful = models.BooleanField()
@@ -117,10 +117,10 @@ class Request(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True)
     articles = models.JSONField(default=list)
-    redactor = models.ForeignKey(User, blank=True, on_delete=models.CASCADE, related_name="assigned_requests")
-    entry_id = models.ForeignKey(Entry, blank=True, on_delete=models.CASCADE, related_name="answered_requests")
+    redactor = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE, related_name="assigned_requests")
+    entry_id = models.ForeignKey(Entry, blank=True, null=True, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-    closed_at = models.DateTimeField()
+    closed_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.title
