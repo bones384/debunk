@@ -217,7 +217,7 @@ class TagDetailView(APIView):
 
     def get(self, request, pk):
         tag = get_object_or_404(Tag, pk=pk)
-        return Response(TagSerializer(tag).data, status=status.HTTP_204_NO_CONTENT)
+        return Response(TagSerializer(tag).data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
         if request.user.is_staff:
@@ -295,7 +295,7 @@ class RequestDetailView(APIView):
         req = get_object_or_404(Request, pk=pk)
 
         if request.user.is_staff or request.user==req.redactor:
-            return Response(RequestSerializer(req).data, status=status.HTTP_204_NO_CONTENT)
+            return Response(RequestSerializer(req).data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def delete(self, request, pk):
