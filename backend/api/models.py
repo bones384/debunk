@@ -46,9 +46,8 @@ class Entry(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     title = models.CharField(max_length=200)
     content = models.TextField()
-    sources = models.JSONField(default=list, blank=True)
+    sources = models.JSONField(null=False, blank=False)
     articles = models.JSONField(default=list, blank=True)
-    # tags = models.ManyToManyField(Tag, related_name="posts")
     created_at = models.DateTimeField(auto_now_add=True)
     is_truthful = models.BooleanField()
 
@@ -112,3 +111,28 @@ class ApplicationDocument(models.Model):
 
     def __str__(self):
         return f"Scan from application {self.application.id}"
+
+class Request(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="submitted_requests")
+    title = models.CharField(max_length=200)
+    content = models.TextField(blank=True)
+    articles = models.JSONField(null=False, blank=False)
+    redactor = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE, related_name="assigned_requests")
+    entry_id = models.ForeignKey(Entry, blank=True, null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return self.title
+
+class RequestTagAssignment(models.Model):
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name="assigned_tags")
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="assigned_requests")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "tag"],
+                name="unique_request_tag_assignment"
+            )
+        ]
