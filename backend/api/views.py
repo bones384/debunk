@@ -313,7 +313,7 @@ class RequestUnassignedListView(generics.ListCreateAPIView):
         return super().get_permissions()
 
     def get_queryset(self):
-        unassigned_requests = Request.objects.filter(entry_id__isnull=True)
+        unassigned_requests = Request.objects.filter(redactor__isnull=True)
         if self.request.user.is_staff:
             return unassigned_requests
 
@@ -358,12 +358,16 @@ class RequestClosedListView(ListAPIView):
 class RequestAssignView(APIView):
     def post(self, request, pk):
         req = get_object_or_404(Request, pk=pk)
-        if request.user.user_type == 'redactor':
-            req.redactor = request.user.id
+
+        if request.user.profile.user_type == 'redactor':
+            req.redactor = request.user
+            req.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def delete(self, request, pk):
         req = get_object_or_404(Request, pk=pk)
-        if request.user.is_staff or request.user.id==req.redactor:
-            req.redactor.delete()
+
+        if request.user.is_staff or request.user==req.redactor:
+            req.redactor = None
+            req.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
