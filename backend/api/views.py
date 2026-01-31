@@ -293,7 +293,8 @@ class RequestListCreate(generics.ListCreateAPIView):
 class RequestDetailView(APIView):
     def get(self, request, pk):
         req = get_object_or_404(Request, pk=pk)
-        if request.user.is_staff or request.user.id==req.redactor:
+
+        if request.user.is_staff or request.user==req.redactor:
             return Response(RequestSerializer(req).data, status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

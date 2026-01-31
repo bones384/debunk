@@ -15,7 +15,7 @@ urlpatterns = [
     path('requests/<int:pk>/', views.RequestDetailView.as_view(), name='request'),
     path('requests/unassigned/', views.RequestUnassignedListView.as_view(), name='unassigned-requests'),
     path('requests/assigned/', views.RequestAssignedListView.as_view(), name='assigned-requests'),
-    #path('requests/closed/', views.RequestClosedListView.as_view(), name='closed-requests'),
+    path('requests/closed/', views.RequestClosedListView.as_view(), name='closed-requests'),
     path('requests/<int:pk>/assign/', views.RequestAssignView.as_view(), name='closed-requests'),
 ]
 

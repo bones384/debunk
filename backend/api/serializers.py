@@ -81,8 +81,10 @@ class EntrySerializer(serializers.ModelSerializer):
             **validated_data
         )
 
-        request.entry_id = entry.id
+        request.entry_id = entry
         request.closed_at = entry.created_at
+        request.save()
+
         entry.articles = set(request.articles + entry.articles)
 
         for tag_id in tag_ids:
