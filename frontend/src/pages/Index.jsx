@@ -5,6 +5,7 @@ import useCurrentUser from "../components/useCurrentUser.jsx";
 
 function Index() {
   const navigate = useNavigate();
+
   const { user } = useCurrentUser();
 
   const [entries, setEntries] = useState([]);
@@ -36,7 +37,7 @@ function Index() {
   const userTypeRaw = user?.profile?.user_type ?? user?.user_type ?? user?.role ?? "";
   const userType = String(userTypeRaw).toLowerCase();
 
-  const isAdmin =  user?.is_superuser === true;
+  const isAdmin = user?.is_superuser === true;
   const isRedactor =
     userType === "redactor" ||
     userType === "redaktor" ||
@@ -57,7 +58,6 @@ function Index() {
   // delete tylko admin
   const canDeleteEntry = () => !!user && isAdmin;
 
-  // --- fetch entries (ZAWSZE, bez względu na login) ---
   useEffect(() => {
     const fetchEntries = async () => {
       setEntriesLoading(true);
@@ -77,7 +77,6 @@ function Index() {
     fetchEntries();
   }, [user]);
 
-  // --- akcje ---
   const handleCreate = () => {
     navigate("/entries/new");
   };
@@ -101,10 +100,10 @@ function Index() {
   };
 
   const toggleUpvote = async (entry) => {
-  if (!user) {
-    navigate("/auth"); // Jeśli nie ma usera, przenieś go do logowania
-    return;
-  }
+    if (!user) {
+      navigate("/auth"); 
+      return;
+    }
 
     const id = entry?.id;
     if (!id) return;
@@ -148,10 +147,10 @@ function Index() {
 
   return (
     <div className="container py-4">
-      <h1 className="mb-4">Witamy w Debunk</h1>
+      <h1 className="mb-4"></h1>
 
       <div className="mb-3">
-        <h5 className="mb-2 text-center">Wszystkie wpisy</h5>
+        <h5 className="mb-2 text-start">Wszystkie wpisy:</h5>
 
         {canCreateEntry && (
           <div className="d-flex justify-content-end">
@@ -187,58 +186,128 @@ function Index() {
           const count = getUpvotesCount(entry);
 
           return (
-            <div
-              className="card shadow-sm border border-2 border-secondary border-opacity-25"
-              key={id}
-            >
-              <div className="card-body d-flex flex-column">
-                <h5 className="card-title mb-2">{getTitleText(entry)}</h5>
+            <div className="card shadow-sm border border-2 border-secondary border-opacity-25 mb-3" key={id} style={{ position: 'relative' }}>
+              <div className="card-body d-flex flex-column p-4">
 
-                <p className="card-text mb-2">{getBodyText(entry)}</p>
+                {canDeleteEntry() && (
+                  <button
+                    className="btn btn-link p-0"
+                    onClick={() => handleDelete(id)}
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '4px',
+                      fontSize: '1.2rem', 
+                      color: '#dc3545',
+                      zIndex: 10,
+                      lineHeight: 1
+                    }}
+                  >
+                    <i className="fa-solid fa-trash"></i>
+                  </button>
+                )}
 
-                <small className="text-muted">Autor: {getAuthorLabel(entry)}</small>
+                {/* 1. AUTOR */}
+                <div className="text-end mb-1 pe-4">
+                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                    Autor: {getAuthorLabel(entry)}
+                  </small>
+                </div>
 
-                <div className="d-flex align-items-center justify-content-between mt-auto pt-3">
+                {/* 2. TYTUŁ*/}
+                <h2 className="card-title h3 text-center fw-bold mb-3">
+                  {getTitleText(entry)}
+                </h2>
+
+                {/* 3. TREŚĆ */}
+                <p className="card-text text-center mb-4" style={{ fontSize: '1.1rem' }}>
+                  {getBodyText(entry)}
+                </p>
+
+                {/* 3.5 KATEGORIE */}
+                <div className="mb-2 text-start">
+                  <span
+                    className="badge rounded-pill bg-light text-secondary border"
+                    style={{ fontSize: '0.7rem', fontWeight: '500', letterSpacing: '0.5px' }}
+                  >
+                    <i className="fa-solid fa-tag me-1" style={{ fontSize: '0.6rem' }}></i>
+                    {entry?.category ? entry.category.toUpperCase() : "BRAK KATEGORII"}
+                  </span>
+                </div>
+
+                {/* 4. LINKI */}
+                <div className="mb-4 text-start">
+                  <div className="mb-1">
+                    <small className="text-muted" style={{ fontSize: '0.8rem' }}>
+                      <strong>Opisywany artykuł:</strong>
+                      {entry?.article_url ? (
+                        <a
+                          href={String(entry.article_url).includes('http') ? entry.article_url : `https://${entry.article_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ms-1 text-primary text-decoration-underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {entry.article_url}
+                        </a>
+                      ) : <span className="ms-1">brak</span>}
+                    </small>
+                  </div>
+
+                  <div>
+                    <small className="text-muted" style={{ fontSize: '0.8rem' }}>
+                      <strong>Źródła:</strong>
+                      {entry?.sources ? (
+                        <a
+                          href={String(entry.sources).includes('http') ? entry.sources : `https://${entry.sources}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ms-1 text-primary text-decoration-underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {entry.sources}
+                        </a>
+                      ) : <span className="ms-1">brak</span>}
+                    </small>
+                  </div>
+                </div>
+
+                {/* 5. STOPKA */}
+                <div className="d-flex align-items-center justify-content-between mt-auto pt-3 border-top">
+
+                  {/* PODBIJANIE */}
                   <button
                     type="button"
-                    className={`btn btn-sm px-3 py-1 ${upvoted ? "btn-success" : "btn-outline-success"
-                      }`}
-                    title={
-                      !user
-                        ? "Zaloguj się, aby podbić"
-                        : upvoted
-                          ? "Usuń podbicie"
-                          : "Podbij"
-                    }
+                    className={`btn btn-sm px-3 py-1 ${upvoted ? "btn-primary" : "btn-outline-primary"}`}
                     disabled={!id || !!busyById[id]}
                     onClick={() => toggleUpvote(entry)}
                   >
                     {upvoted ? "✓ Podbito" : "+ Podbij"}
-                    <span className="ms-2 badge text-bg-light">{count}</span>
+                    <span className="ms-2 badge text-bg-light text-primary border border-primary-subtle">{count}</span>
                   </button>
 
-                  <div className="d-flex justify-content-end gap-2">
+                  {/* WERDYKT I EDYCJA */}
+                  <div className="d-flex align-items-center gap-3">
+                    <span className={`text-uppercase ${entry?.verdict === "Prawda" ? "text-success" : "text-danger"
+                      }`} style={{
+                        fontSize: '1.1rem',
+                        fontWeight: '900',
+                        letterSpacing: '1.5px'
+                      }}>
+                      {entry?.verdict === "Prawda" ? "Werdykt: PRAWDA" : "Werdykt: FAŁSZ"}
+                    </span>
+
                     {canEditEntry(entry) && (
                       <button
-                        type="button"
-                        className="btn btn-outline-secondary btn-sm px-2 py-1"
+                        className="btn btn-link btn-sm text-secondary text-decoration-none"
                         onClick={() => handleEdit(id)}
                       >
                         Edytuj
                       </button>
                     )}
-
-                    {canDeleteEntry() && (
-                      <button
-                        type="button"
-                        className="btn btn-outline-danger btn-sm px-2 py-1"
-                        onClick={() => handleDelete(id)}
-                      >
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
-                    )}
                   </div>
                 </div>
+
               </div>
             </div>
           );
