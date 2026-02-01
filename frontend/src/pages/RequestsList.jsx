@@ -25,7 +25,6 @@ export default function RequestsList() {
     };
   }, []);
 
-  // backend ma pole is_accepted -> pending = is_accepted === false
   const pending = useMemo(
     () => items.filter((x) => x?.is_accepted === false),
     [items]

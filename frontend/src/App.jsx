@@ -14,6 +14,14 @@ import EditEntry from "./pages/EditEntry.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Accounts from "./pages/Accounts.jsx";
 import Ranking from "./pages/Ranking.jsx";
+import Requests from "./pages/Requests.jsx";
+import RequestsUnassigned from "./pages/RequestsUnassigned.jsx";
+import RequestsMine from "./pages/RequestsMine.jsx";
+import RequestsAll from "./pages/RequestsAll.jsx";
+import RequestDetails from "./pages/RequestDetails.jsx";
+import RequestsIndex from "./pages/RequestsIndex.jsx";
+
+
 
 import EditorRequest from "./pages/EditorRequest.jsx";
 import RequestsList from "./pages/RequestsList.jsx";
@@ -55,6 +63,29 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+
+                    <Route
+                      path="/zgloszenia"
+                      element={
+                        <ProtectedRoute>
+                          <Requests />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route index element={<RequestsIndex />} />
+                      <Route path="unassigned" element={<RequestsUnassigned />} />
+                      <Route path="mine" element={<RequestsMine />} />
+                      <Route
+                        path="all"
+                        element={
+                          <ProtectedRoute requireSuperuser>
+                            <RequestsAll />
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      <Route path=":id" element={<RequestDetails />} />
+                    </Route>
 
                     <Route
                       path="/prosby"

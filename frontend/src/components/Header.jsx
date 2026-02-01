@@ -40,8 +40,13 @@ export default function Header() {
   const isSuperuser = Boolean(user?.is_superuser);
 
   const userType = (user?.profile?.user_type || "").toString().toLowerCase();
-  const isEditor = userType.includes("redaktor") || userType.includes("editor");
+  const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
+  userType.includes(w)
+);
+
   const canRequestEditor = loggedIn && !isSuperuser && !isEditor;
+  const canSeeRequests = loggedIn && (isSuperuser || isEditor);
+
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -92,6 +97,13 @@ export default function Header() {
                   </Link>
                 </>
               )}
+              
+              {canSeeRequests && (
+  <Link to="/zgloszenia" className="nav-link-custom me-4">
+    Zgłoszenia
+  </Link>
+)}
+
 
               <span className="text-white small me-2 d-flex align-items-center lh-1">
                 <i className="fa-solid fa-user me-1" aria-hidden="true"></i>
