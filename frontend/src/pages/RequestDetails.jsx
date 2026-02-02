@@ -54,55 +54,103 @@ export default function RequestDetails() {
     navigate(`/new-entry?requestId=${id}`);
   }
 
-  const categoryText = item
-    ? String(
-        item.category?.name ??
-          item.category?.label ??
-          item.category_name ??
-          item.category ??
-          (Array.isArray(item.tags) && item.tags.length ? item.tags[0] : "") ??
-          "-"
-      )
-    : "-";
+  if (error) {
+    return <div className="alert alert-danger">{error}</div>;
+  }
+  if (!item) {
+    return <p className="text-muted">Ładowanie…</p>;
+  }
 
   return (
-    <div>
-      <h4 className="mb-3">Zgłoszenie #{id}</h4>
+    <div className="container py-4">
+      <h4 className="mb-3">Zgłoszenie #{item.id}</h4>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {!item && !error && <p className="text-muted">Ładowanie...</p>}
+      {/* Tytuł */}
+      <div className="mb-3">
+        <strong>Tytuł:</strong>{" "}
+        {item.title || <span className="text-muted">Brak tytułu</span>}
+      </div>
 
-      {item && (
-        <div className="card">
-          <div className="card-body">
-            <h5 className="card-title">{item.title || "Brak tytułu"}</h5>
+      {/* Opis / treść */}
+      {item.comment && (
+        <div className="mb-3">
+          <strong>Opis:</strong>
+          <div>{item.comment}</div>
+        </div>
+      )}
 
-            <p className="mb-2">
-              <strong>Kategoria:</strong> {categoryText}
-            </p>
-
-            {item.comment && <p className="mb-2">{item.comment}</p>}
-
-            <pre className="bg-body-tertiary p-3 rounded small mb-3">
-{JSON.stringify(item, null, 2)}
-            </pre>
-
-            <div className="d-flex gap-2 flex-wrap">
-              <button className="btn btn-primary" onClick={handleAssign} disabled={busy}>
-                Przypisz do mnie
-              </button>
-
-              <button className="btn btn-outline-danger" onClick={handleUnassign} disabled={busy}>
-                Cofnij przypisanie
-              </button>
-
-              <button className="btn btn-success" onClick={handleFinalize} disabled={busy}>
-                Finalizuj (utwórz wpis)
-              </button>
-            </div>
+      {/* Kategorie / Tagi */}
+      {Array.isArray(item.tags) && item.tags.length > 0 && (
+        <div className="mb-3">
+          <strong>Tagi / Kategorie:</strong>
+          <div className="d-flex flex-wrap gap-2 mt-1">
+            {item.tags.map((t) => (
+              <span key={t.id} className="badge bg-secondary">
+                {t.name}
+              </span>
+            ))}
           </div>
         </div>
       )}
+
+      {/* Artykuły */}
+      <div className="mb-3">
+        <strong>Artykuły powiązane:</strong>
+        {Array.isArray(item.articles) && item.articles.length > 0 ? (
+          <ul>
+            {item.articles.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-muted">Brak artykułów</div>
+        )}
+      </div>
+
+      {/* Autor i redaktor */}
+      <div className="mb-3">
+        <strong>Zgłaszający:</strong> {item.author?.username || "-"}
+      </div>
+      <div className="mb-3">
+        <strong>Przypisany redaktor:</strong>{" "}
+        {item.redactor?.username ?? <span className="text-muted">Brak</span>}
+      </div>
+
+      {/* Status */}
+      <div className="mb-3">
+        <strong>Status:</strong>{" "}
+        {item.closed_at ? (
+          <span className="text-danger">zamknięte</span>
+        ) : (
+          <span className="text-success">otwarte</span>
+        )}
+      </div>
+
+      <div className="d-flex gap-2 flex-wrap">
+        <button
+          className="btn btn-primary"
+          onClick={handleAssign}
+          disabled={busy}
+        >
+          Przypisz do mnie
+        </button>
+
+        <button
+          className="btn btn-outline-danger"
+          onClick={handleUnassign}
+          disabled={busy}
+        >
+          Cofnij przypisanie
+        </button>
+
+        <button
+          className="btn btn-success"
+          onClick={handleFinalize}
+          disabled={busy}
+        >
+          Finalizuj (utwórz wpis)
+        </button>
+      </div>
     </div>
   );
 }

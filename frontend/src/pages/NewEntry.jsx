@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import useCurrentUser from "../components/useCurrentUser.jsx";
@@ -7,13 +7,22 @@ export default function NewEntry() {
   const { user } = useCurrentUser();
   const navigate = useNavigate();
 
+  const [articles, setArticles] = useState([""]);
+
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
 
-  const [articles, setArticles] = useState([""]);
-  const [tags, setTags] = useState([""]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
   const [error, setError] = useState(null);
+
+  // Pobierz kategorie z backendu
+  useEffect(() => {
+    api.get("/api/categories/")
+      .then(res => setCategories(res.data))
+      .catch(err => console.error("Błąd pobierania kategorii", err));
+  }, []);
 
   if (!user) {
     return (
@@ -30,64 +39,47 @@ export default function NewEntry() {
   const handleRemoveArticle = (i) =>
     setArticles((prev) => prev.filter((_, idx) => idx !== i));
 
-  const handleAddTag = () => setTags((prev) => [...prev, ""]);
-  const handleTagChange = (i, val) =>
-    setTags((prev) => prev.map((x, idx) => (i === idx ? val : x)));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
 
-  const handleRemoveTag = (i) =>
-    setTags((prev) => prev.filter((_, idx) => idx !== i));
+    // WALIDACJE
+    if (!title.trim()) {
+      setError("Tytuł jest wymagany!");
+      return;
+    }
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(null);
+    if (selectedCategories.length === 0) {
+      setError("Wybierz przynajmniej jedną kategorię!");
+      return;
+    }
 
-  // walidacje
-  if (!title.trim()) {
-    setError("Tytuł jest wymagany!");
-    return;
-  }
-  const goodArticles = articles.map((a) => a.trim()).filter(Boolean);
-  if (goodArticles.length === 0) {
-    setError("Podaj przynajmniej jeden artykuł.");
-    return;
-  }
-  const goodTags = tags.map((t) => t.trim()).filter(Boolean);
-  if (goodTags.length === 0) {
-    setError("Podaj przynajmniej jeden tag.");
-    return;
-  }
+    const goodArticles = articles.map((a) => a.trim()).filter(Boolean);
+    if (goodArticles.length === 0) {
+      setError("Podaj przynajmniej jeden artykuł.");
+      return;
+    }
 
-  try {
-    const tagIds = await Promise.all(
-      goodTags.map(async (name) => {
-        const cleanName = name.trim().toLowerCase();
+    try {
+      const payload = {
+        title: title.trim(),
+        comment: comment.trim(),
+        articles: goodArticles,
+        category_ids: selectedCategories,
+        tag_ids: selectedCategories  // KATEGORIE traktujemy jako TAGI
+      };
 
-        const existing = await api.get(`/api/categories/?search=${cleanName}`);
-        const found = Array.isArray(existing.data)
-          ? existing.data.find((t) => t.name.toLowerCase() === cleanName)
-          : existing.data?.results?.find((t) => t.name.toLowerCase() === cleanName);
+      console.log("sending data:", payload);
 
-        if (found?.id) return found.id;
+      const res = await api.post("/api/requests/", payload);
 
-        const created = await api.post("/api/categories/", { name: cleanName });
-        return created.data.id;
-      })
-    );
-
-    await api.post("/api/requests/", {
-      title: title.trim(),
-      comment: comment.trim(),
-      articles: goodArticles,
-      tag_ids: tagIds,
-    });
-
-    navigate("/zgloszenia");
-
-  } catch (err) {
-    setError(err?.response?.data ?? err.message);
-  }
-};
-
+      console.log("backend response:", res.data);
+      navigate("/zgloszenia");
+    } catch (err) {
+      console.error("SUBMIT ERROR:", err);
+      setError(err?.response?.data ?? err?.message);
+    }
+  };
 
   return (
     <div className="container py-4">
@@ -124,6 +116,30 @@ const handleSubmit = async (e) => {
           />
         </div>
 
+        {/* Kategorie */}
+        <div className="mb-3">
+          <label className="form-label fw-bold">Kategorie *</label>
+          <select
+            className="form-select"
+            multiple
+            value={selectedCategories.map(String)}
+            onChange={(e) =>
+              setSelectedCategories(
+                Array.from(e.target.selectedOptions, (o) => Number(o.value))
+              )
+            }
+          >
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <div className="form-text">
+            Przytrzymaj Ctrl (Cmd), aby wybrać wiele kategorii.
+          </div>
+        </div>
+
         {/* Artykuły */}
         <div className="mb-3">
           <label className="form-label">Adresy artykułów *</label>
@@ -152,37 +168,6 @@ const handleSubmit = async (e) => {
             onClick={handleAddArticle}
           >
             Dodaj artykuł
-          </button>
-        </div>
-
-        {/* Tagi */}
-        <div className="mb-3">
-          <label className="form-label">Tagi *</label>
-          {tags.map((t, i) => (
-            <div key={i} className="d-flex gap-2 mb-2">
-              <input
-                type="text"
-                className="form-control"
-                value={t}
-                onChange={(e) => handleTagChange(i, e.target.value)}
-                placeholder="np. #fake"
-                required
-              />
-              <button
-                type="button"
-                className="btn btn-outline-danger"
-                onClick={() => handleRemoveTag(i)}
-              >
-                Usuń
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary"
-            onClick={handleAddTag}
-          >
-            Dodaj tag
           </button>
         </div>
 
