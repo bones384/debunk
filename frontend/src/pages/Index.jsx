@@ -39,7 +39,8 @@ function Index() {
     userType === "editor" ||
     isAdmin;
 
-  const canCreateEntry = !!user && isRedactor && !isAdmin;
+  const canCreateSubmission = !!user && !isAdmin;
+
 
   const canEditEntry = (entry) => {
     if (!user) return false;
@@ -111,10 +112,14 @@ function Index() {
   return (
     <div className="container py-1">
       <div className="mb-1">
-        {canCreateEntry && (
+        {canCreateSubmission && (
           <div className="d-flex justify-content-end">
-            <button type="button" className="btn btn-primary btn-sm px-3 py-1" onClick={handleCreate}>
-              <i className="fa-solid fa-plus me-2" aria-hidden="true"></i> Dodaj wpis
+            <button
+              type="button"
+              className="btn btn-primary btn-sm px‑3 py‑1"
+              onClick={() => navigate("/submissions/new")}
+            >
+              <i className="fa-solid fa-plus me‑2"></i> Dodaj zgłoszenie
             </button>
           </div>
         )}

@@ -56,10 +56,10 @@ function App() {
                     <Route path="/register" element={<Register />} />
 
                     <Route
-                      path="/zgloszenia/new"
+                      path="/submissions/new"
                       element={
                         <ProtectedRoute>
-                          <EditorRequest />
+                          <NewEntry />
                         </ProtectedRoute>
                       }
                     />

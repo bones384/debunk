@@ -11,8 +11,7 @@ export default function ProtectedRoute({
 }) {
 
   const [status, setStatus] = useState("loading"); 
-  const [isSuperuser, setIsSuperuser] = useState(false);
-  const [roleOk, setRoleOk] = useState(true);
+  const [roleOk, setRoleOk] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -53,33 +52,35 @@ export default function ProtectedRoute({
           }
         }
 
-        if (requireSuperuser || requireEditorOrSuperuser) {
-  const me = await api.get("/api/users/me/");
+        if (requireSuperuser) {
+          const me = await api.get("/api/users/me/");
+          const su = Boolean(me?.data?.is_superuser);
+          if (!su) {
+            if (mounted) setStatus("forbidden");
+            return;
+          }
+        }
 
-  const su = Boolean(me?.data?.is_superuser);
-  const userType = (me?.data?.profile?.user_type || "")
-    .toString()
-    .toLowerCase();
-  const editor = ["redaktor", "editor", "redactor"].some((w) =>
-  userType.includes(w)
-);
+        // jeśli wymagana jest superuser lub editor
+        if (requireEditorOrSuperuser) {
+          const me = await api.get("/api/users/me/");
+          const su = Boolean(me?.data?.is_superuser);
+          const userType = (me?.data?.profile?.user_type || "")
+            .toString().toLowerCase();
+          const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
+            userType.includes(w)
+          );
 
+          if (!su && !isEditor) {
+            if (mounted) setStatus("forbidden");
+            return;
+          }
+        }
 
-  const ok = requireSuperuser ? su : (su || editor);
-
-  if (mounted) {
-    setIsSuperuser(su);
-    setRoleOk(ok);
-    setStatus("ok");
-  }
-  return;
-}
-
-
-       if (mounted) {
-  setRoleOk(true);
-  setStatus("ok");
-}
+        if (mounted) {
+          setRoleOk(true);
+          setStatus("ok");
+        }
 
       } catch {
         if (mounted) setStatus("unauthorized");
@@ -93,17 +94,15 @@ export default function ProtectedRoute({
     };
   }, [requireSuperuser, requireEditorOrSuperuser]);
 
-
   if (status === "loading") return <div>Loading...</div>;
 
   if (status === "unauthorized") {
     return <Navigate to="/auth" replace />;
   }
 
- if ((requireSuperuser || requireEditorOrSuperuser) && !roleOk) {
-  return <Navigate to="/" replace />;
-}
-
+  if (!roleOk) {
+    return <Navigate to="/" replace />;
+  }
 
   return children;
 }
