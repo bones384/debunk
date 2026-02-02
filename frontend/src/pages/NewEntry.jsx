@@ -128,6 +128,9 @@ export default function NewEntry() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isTruthful, setIsTruthful] = useState(true);
+  const [articleUrl, setArticleUrl] = useState("");
+  const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState([]);
 
   const [sources, setSources] = useState([""]);
   const [articles, setArticles] = useState([]);
@@ -140,6 +143,12 @@ export default function NewEntry() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api.get("/api/categories/")
+      .then(res => setCategories(res.data))
+      .catch(err => console.error("Błąd kategorii", err));
+  }, []);
   const [loadingRequest, setLoadingRequest] = useState(false);
 
   const userTypeRaw = user?.profile?.user_type ?? user?.user_type ?? user?.role ?? "";
@@ -222,57 +231,60 @@ export default function NewEntry() {
     setSources((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
 
-    if (!sourcesValid) {
-      setError("Dodaj co najmniej 1 źródło.");
-      return;
+  if (!sourcesValid) {
+    setError("Dodaj co najmniej 1 źródło.");
+    return;
+  }
+
+  if (requestId && (!Array.isArray(tagIds) || tagIds.length === 0)) {
+    setError("Brak tag_ids (nie udało się odczytać kategorii/tagów ze zgłoszenia).");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const cleanedArticles = articles.map((a) => a.trim()).filter(Boolean);
+
+    const payload = {
+      title,
+      content,
+      is_truthful: isTruthful,
+      article_url: articleUrl,
+      category,
+      sources: sourcesValid,
+    };
+
+    if (requestId) payload.tag_ids = tagIds;
+    if (cleanedArticles.length > 0) payload.articles = cleanedArticles;
+
+    if (requestId) {
+      await postEntryWithRequestFallback(payload, requestId);
+    } else {
+      await api.post("/api/entries/", payload);
     }
 
-    if (requestId && (!Array.isArray(tagIds) || tagIds.length === 0)) {
-      setError("Brak tag_ids (nie udało się odczytać kategorii/tagów ze zgłoszenia).");
-      return;
-    }
+    navigate(requestId ? "/zgloszenia/mine" : "/");
 
-    setSaving(true);
+  } catch (err) {
+    setError(err?.response?.data ?? err.message);
+  } finally {
+    setSaving(false);
+  }
+};
 
-    try {
-      const cleanedArticles = articles.map((a) => a.trim()).filter(Boolean);
 
-      const payload = {
-        title,
-        content,
-        is_truthful: isTruthful,
-        sources: sourcesValid,
-      };
-
-      if (requestId) payload.tag_ids = tagIds;
-
-      if (cleanedArticles.length > 0) payload.articles = cleanedArticles;
-
-      if (requestId) {
-        await postEntryWithRequestFallback(payload, requestId);
-      } else {
-        await api.post("/api/entries/", payload);
-      }
-
-      navigate(requestId ? "/zgloszenia/mine" : "/");
-    } catch (err) {
-      setError(err?.response?.data ?? err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) return <div>Ładowanie...</div>;
+  if (loading) return <div className="container py-5 text-center">Ładowanie...</div>;
 
   if (!user) {
     return (
-      <div>
+      <div className="container py-5 text-center">
         <p>Nie jesteś zalogowany.</p>
-        <Link to="/auth" className="btn btn-primary btn-sm px-3 py-1">
+        <Link to="/auth" className="btn btn-primary btn-sm px-4">
           Zaloguj / Zarejestruj
         </Link>
       </div>
@@ -280,173 +292,201 @@ export default function NewEntry() {
   }
 
   if (!canCreate) {
+    return (
+      <div className="container py-5">
+        <div className="alert alert-warning">Twoja rola nie pozwala na dodawanie wpisów.</div>
+      </div>
+    );
     return <div className="alert alert-warning">Twoja rola nie pozwala na dodawanie wpisów.</div>;
   }
 
-  return (
-    <div className="container py-2">
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h3 className="m-0">
-          {requestId ? `Finalizuj zgłoszenie #${requestId}` : "Dodaj nowy wpis"}
-        </h3>
-        <button className="btn btn-outline-secondary btn-sm px-3 py-1" onClick={() => navigate(-1)}>
-          Wstecz
-        </button>
+return (
+  <div className="container py-4">
+    <div className="d-flex align-items-center justify-content-between mb-4">
+      <h3 className="fw-bold m-0 text-uppercase">
+        {requestId ? `Finalizuj zgłoszenie #${requestId}` : "Dodaj nowy wpis"}
+      </h3>
+      <button
+        className="btn btn-outline-secondary btn-sm"
+        onClick={() => navigate(-1)}
+      >
+        Wstecz
+      </button>
+    </div>
+
+    {loadingRequest && (
+      <div className="text-muted mb-3">Ładowanie danych zgłoszenia…</div>
+    )}
+
+    {error && (
+      <div className="alert alert-danger shadow-sm">
+        <pre className="m-0 small">{JSON.stringify(error, null, 2)}</pre>
+      </div>
+    )}
+
+    <form onSubmit={handleSubmit} className="card p-4 shadow-sm border-0">
+      <div className="row">
+        {/* Lewa strona - Tytuł i URL */}
+        <div className="col-md-8">
+          <div className="mb-3">
+            <label className="form-label fw-bold small text-uppercase">
+              Tytuł artykułu
+            </label>
+            <input
+              className="form-control"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              placeholder="Np. Szokujące odkrycie naukowców..."
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label fw-bold small text-uppercase">
+              Źródło (Adres URL)
+            </label>
+            <input
+              className="form-control"
+              value={articleUrl}
+              onChange={(e) => setArticleUrl(e.target.value)}
+              placeholder="https://example.com"
+            />
+            <div className="form-text">
+              To z tego adresu wyciągniemy domenę do rankingu.
+            </div>
+          </div>
+        </div>
+
+        {/* Prawa strona - Kategoria i Werdykt */}
+        <div className="col-md-4">
+          <div className="mb-3">
+            <label className="form-label fw-bold small text-uppercase">
+              Kategoria
+            </label>
+            <select
+              className="form-select"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+            >
+              <option value="">Wybierz kategorię...</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="form-label fw-bold small text-uppercase d-block">
+              Werdykt
+            </label>
+            <div className="btn-group w-100 shadow-sm">
+              <input
+                type="radio"
+                className="btn-check"
+                name="truth"
+                id="v-true"
+                checked={isTruthful === true}
+                onChange={() => setIsTruthful(true)}
+              />
+              <label className="btn btn-outline-success" htmlFor="v-true">
+                Prawda
+              </label>
+
+              <input
+                type="radio"
+                className="btn-check"
+                name="truth"
+                id="v-false"
+                checked={isTruthful === false}
+                onChange={() => setIsTruthful(false)}
+              />
+              <label className="btn btn-outline-danger" htmlFor="v-false">
+                Fałsz
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {loadingRequest && <div className="text-muted mb-3">Ładowanie danych zgłoszenia…</div>}
-
-      {error && (
-        <div className="alert alert-danger">
-          <pre className="m-0">{JSON.stringify(error, null, 2)}</pre>
+      {/* Lista artykułów */}
+      {articles.length > 0 && (
+        <div className="mb-4">
+          <label className="form-label d-block">Adresy artykułów (opcjonalnie)</label>
+          <ul className="list-group mb-2">
+            {articles.map((a, idx) => (
+              <li
+                key={`${a}-${idx}`}
+                className="list-group-item d-flex justify-content-between"
+              >
+                <span>{a}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => removeArticle(idx)}
+                  disabled={Boolean(requestId) && idx < lockedArticlesCount}
+                >
+                  Usuń
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        {requestId && (
-          <div className="mb-3">
-            <label className="form-label">Kategoria</label>
-            <input className="form-control" value={categoryLabel || "-"} disabled readOnly />
-            {Array.isArray(tagIds) && tagIds.length > 0 && (
-              <div className="text-muted small mt-1">tag_ids: {tagIds.join(", ")}</div>
-            )}
-          </div>
-        )}
-
-        <div className="mb-3">
-          <label className="form-label">Tytuł</label>
-          <input
-            className="form-control"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            maxLength={200}
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label">Treść</label>
-          <textarea
-            className="form-control"
-            rows={6}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="form-label d-block">Werdykt</label>
-
-          <div className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              type="radio"
-              name="truthfulness"
-              id="truthful-yes"
-              checked={isTruthful === true}
-              onChange={() => setIsTruthful(true)}
-            />
-            <label className="form-check-label" htmlFor="truthful-yes">
-              Prawdziwe
-            </label>
-          </div>
-
-          <div className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              type="radio"
-              name="truthfulness"
-              id="truthful-no"
-              checked={isTruthful === false}
-              onChange={() => setIsTruthful(false)}
-            />
-            <label className="form-check-label" htmlFor="truthful-no">
-              Nieprawdziwe
-            </label>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="form-label d-block">Adresy artykułów (opcjonalnie)</label>
-
-          {articles.length > 0 && (
-            <ul className="list-group mb-2">
-              {articles.map((a, idx) => {
-                const locked = Boolean(requestId) && idx < lockedArticlesCount;
-                return (
-                  <li key={`${a}-${idx}`} className="list-group-item d-flex justify-content-between">
-                    <span>{a}</span>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => removeArticle(idx)}
-                      disabled={locked}
-                      title={locked ? "Nie można usuwać artykułów ze zgłoszenia" : "Usuń"}
-                    >
-                      Usuń
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          <div className="d-flex gap-2">
+      {/* Źródła */}
+      <div className="mb-4">
+        <label className="form-label d-block">Źródła (min. 1)</label>
+        {sources.map((s, idx) => (
+          <div className="d-flex gap-2 mb-2" key={idx}>
             <input
               className="form-control"
-              value={newArticle}
-              onChange={(e) => setNewArticle(e.target.value)}
-              placeholder="https://..."
+              value={s}
+              onChange={(e) => updateSource(idx, e.target.value)}
+              placeholder="np. https://..."
+              required={idx === 0}
             />
-            <button type="button" className="btn btn-outline-dark" onClick={addArticle}>
-              Dodaj
+            <button
+              type="button"
+              className="btn btn-outline-danger"
+              onClick={() => removeSource(idx)}
+              disabled={sources.length <= 1}
+            >
+              Usuń
             </button>
           </div>
-        </div>
+        ))}
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          onClick={addSource}
+        >
+          Dodaj źródło
+        </button>
+      </div>
 
-        <div className="mb-4">
-          <label className="form-label d-block">Źródła (min. 1)</label>
-
-          {sources.map((s, idx) => (
-            <div className="d-flex gap-2 mb-2" key={idx}>
-              <input
-                className="form-control"
-                value={s}
-                onChange={(e) => updateSource(idx, e.target.value)}
-                placeholder="np. https://..."
-                required={idx === 0}
-              />
-              <button
-                type="button"
-                className="btn btn-outline-danger"
-                onClick={() => removeSource(idx)}
-                disabled={sources.length <= 1}
-              >
-                Usuń
-              </button>
-            </div>
-          ))}
-
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={addSource}>
-            Dodaj źródło
-          </button>
-        </div>
-
-        <div className="d-flex gap-2">
-          <button className="btn btn-primary btn-sm px-3 py-1" type="submit" disabled={saving}>
-            {saving ? "Zapisywanie..." : "Utwórz"}
-          </button>
-          <button
-            className="btn btn-outline-secondary btn-sm px-3 py-1"
-            type="button"
-            onClick={() => navigate(requestId ? "/zgloszenia/mine" : "/")}
-            disabled={saving}
-          >
-            Anuluj
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
+      {/* Submit buttons */}
+      <div className="d-flex gap-2">
+        <button
+          className="btn btn-primary btn-sm px-3 py-1"
+          type="submit"
+          disabled={saving}
+        >
+          {saving ? "Zapisywanie..." : "Utwórz"}
+        </button>
+        <button
+          className="btn btn-outline-secondary btn-sm px-3 py-1"
+          type="button"
+          onClick={() =>
+            navigate(requestId ? "/zgloszenia/mine" : "/")
+          }
+          disabled={saving}
+        >
+          Anuluj
+        </button>
+      </div>
+    </form>
+  </div>
+)};
