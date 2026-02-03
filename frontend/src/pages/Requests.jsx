@@ -4,7 +4,13 @@ import useCurrentUser from "../components/useCurrentUser.jsx";
 export default function Requests() {
   const { user, loading } = useCurrentUser();
 
-  const tabClass = ({ isActive }) => `nav-link ${isActive ? "active" : ""}`;
+  // STYLIZACJA: Brak zaokrągleń, wspólna ramka dzięki marginLeft -1px
+  const tabClass = ({ isActive }) => 
+    `nav-link px-4 py-2 fw-bold text-uppercase rounded-0 ${
+      isActive 
+        ? "bg-dark text-white" 
+        : "bg-white text-dark"
+    }`;
 
   const isSuperuser = Boolean(user?.is_superuser);
   const userType = String(user?.profile?.user_type || "").toLowerCase();
@@ -15,16 +21,13 @@ export default function Requests() {
 
   if (loading) return <div>Ładowanie...</div>;
 
-  // admin: tylko "Wszystkie"
-  // redaktor: "Nieprzypisane" + "Moje"
   const tabs = isSuperuser
-    ? [{ to: "all", label: "Wszystkie" }]
+    ? [] 
     : [
         { to: "unassigned", label: "Nieprzypisane" },
         { to: "mine", label: "Moje" },
       ];
 
-  // safety: jeśli ktoś nie ma roli a wejdzie linkiem
   if (!isSuperuser && !isEditor) {
     return (
       <div className="alert alert-warning">
@@ -35,17 +38,30 @@ export default function Requests() {
 
   return (
     <div>
-      <h2 className="mb-3">Zgłoszenia</h2>
+      <h2 className="mb-4 fw-bold text-uppercase">Zgłoszenia</h2>
 
-      <ul className="nav nav-tabs mb-3">
-        {tabs.map((t) => (
-          <li className="nav-item" key={t.to}>
-            <NavLink className={tabClass} to={t.to}>
-              {t.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+      {tabs.length > 0 && (
+        <div className="d-flex mb-4">
+          {/* Grupa przycisków złączona w jeden blok */}
+          <div className="nav d-inline-flex border border-dark border-1 shadow-sm">
+            {tabs.map((t) => (
+              <NavLink 
+                key={t.to}
+                className={tabClass} 
+                to={t.to}
+                style={({ isActive }) => ({
+                  borderRight: "1px solid #000",
+                  textDecoration: "none",
+                  // Usuwamy prawą ramkę dla ostatniego elementu, żeby nie była podwójna
+                  borderRight: tabs.indexOf(t) === tabs.length - 1 ? "none" : "1px solid #000"
+                })}
+              >
+                {t.label}
+              </NavLink>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Outlet />
     </div>

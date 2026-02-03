@@ -41,12 +41,11 @@ export default function Header() {
 
   const userType = (user?.profile?.user_type || "").toString().toLowerCase();
   const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
-  userType.includes(w)
-);
+    userType.includes(w)
+  );
 
   const canRequestEditor = loggedIn && !isSuperuser && !isEditor;
   const canSeeRequests = loggedIn && (isSuperuser || isEditor);
-
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -81,6 +80,11 @@ export default function Header() {
             Debunk
           </Link>
 
+          {/* NOWA ZAKŁADKA: STRONA GŁÓWNA */}
+          <Link to="/" className="nav-link-custom me-4">
+            Strona Główna
+          </Link>
+
           <Link to="/ranking" className="nav-link-custom me-auto">
             Ranking
           </Link>
@@ -99,11 +103,10 @@ export default function Header() {
               )}
               
               {canSeeRequests && (
-  <Link to="/zgloszenia" className="nav-link-custom me-4">
-    Zgłoszenia
-  </Link>
-)}
-
+                <Link to="/zgloszenia" className="nav-link-custom me-4">
+                  Zgłoszenia
+                </Link>
+              )}
 
               <span className="text-white small me-2 d-flex align-items-center lh-1">
                 <i className="fa-solid fa-user me-1" aria-hidden="true"></i>

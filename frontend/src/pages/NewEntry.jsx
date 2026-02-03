@@ -8,16 +8,12 @@ export default function NewEntry() {
   const navigate = useNavigate();
 
   const [articles, setArticles] = useState([""]);
-
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
-
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
-
   const [error, setError] = useState(null);
 
-  
   useEffect(() => {
     api
       .get("/api/categories/")
@@ -33,6 +29,15 @@ export default function NewEntry() {
     );
   }
 
+  // Obsługa zaznaczania checkboxów
+  const handleCheckboxChange = (categoryId) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
   const handleAddArticle = () => setArticles((prev) => [...prev, ""]);
   const handleArticleChange = (i, val) =>
     setArticles((prev) => prev.map((x, idx) => (i === idx ? val : x)));
@@ -44,7 +49,6 @@ export default function NewEntry() {
     e.preventDefault();
     setError(null);
 
-    // WALIDACJE
     if (!title.trim()) {
       setError("Tytuł jest wymagany!");
       return;
@@ -70,16 +74,9 @@ export default function NewEntry() {
         tag_ids: selectedCategories, 
       };
 
-      console.log("sending data:", payload);
+      await api.post("/api/requests/", payload);
 
-      const res = await api.post("/api/requests/", payload);
-
-      console.log("backend response:", res.data);
-
-      
-      const userType = (user?.profile?.user_type || "")
-        .toString()
-        .toLowerCase();
+      const userType = (user?.profile?.user_type || "").toString().toLowerCase();
       const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
         userType.includes(w)
       );
@@ -87,7 +84,6 @@ export default function NewEntry() {
 
       navigate(isSuperuser || isEditor ? "/zgloszenia" : "/");
     } catch (err) {
-      console.error("SUBMIT ERROR:", err);
       setError(err?.response?.data ?? err?.message);
     }
   };
@@ -101,7 +97,6 @@ export default function NewEntry() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Tytuł */}
         <div className="mb-3">
           <label className="form-label">Tytuł *</label>
           <input
@@ -114,7 +109,6 @@ export default function NewEntry() {
           />
         </div>
 
-        {/* Komentarz */}
         <div className="mb-3">
           <label className="form-label">Opis (opcjonalnie)</label>
           <textarea
@@ -125,31 +119,43 @@ export default function NewEntry() {
           />
         </div>
 
-        {/* Kategorie */}
-        <div className="mb-3">
-          <label className="form-label fw-bold">Kategorie *</label>
-          <select
-            className="form-select"
-            multiple
-            value={selectedCategories.map(String)}
-            onChange={(e) =>
-              setSelectedCategories(
-                Array.from(e.target.selectedOptions, (o) => Number(o.value))
-              )
-            }
-          >
+        {/* Sekcja Kategorii z Checkboxami - identycznie jak w FinalizeRequest */}
+        <div className="mb-4">
+          <label className="form-label fw-bold text-muted small text-uppercase d-block">Wybierz Kategorie *</label>
+          <div className="d-flex flex-wrap gap-3 p-3 bg-light rounded border mb-3">
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
+              <div key={cat.id} className="form-check d-flex align-items-center">
+                <input
+                  className="form-check-input border-secondary"
+                  type="checkbox"
+                  id={`cat-${cat.id}`}
+                  style={{ width: "1.2em", height: "1.2em", cursor: "pointer", border: "1px solid #ced4da" }}
+                  checked={selectedCategories.includes(cat.id)}
+                  onChange={() => handleCheckboxChange(cat.id)}
+                />
+                <label className="form-check-label ms-2" htmlFor={`cat-${cat.id}`} style={{ cursor: "pointer" }}>
+                  {cat.name}
+                </label>
+              </div>
             ))}
-          </select>
-          <div className="form-text">
-            Przytrzymaj Ctrl (Cmd), aby wybrać wiele kategorii.
+          </div>
+
+          <label className="form-label fw-bold text-muted small text-uppercase">Wybrane:</label>
+          <div className="d-flex gap-2 flex-wrap">
+            {selectedCategories.length > 0 ? (
+              categories
+                .filter((c) => selectedCategories.includes(c.id))
+                .map((c) => (
+                  <span key={c.id} className="badge bg-primary px-3 py-2 text-uppercase">
+                    {c.name}
+                  </span>
+                ))
+            ) : (
+              <span className="text-muted small">Brak wybranych kategorii</span>
+            )}
           </div>
         </div>
 
-        {/* Artykuły */}
         <div className="mb-3">
           <label className="form-label">Adresy artykułów *</label>
           {articles.map((a, i) => (

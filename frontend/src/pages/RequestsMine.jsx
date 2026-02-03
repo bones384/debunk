@@ -84,91 +84,90 @@ export default function RequestsMine() {
   if (!canSee) return <div className="alert alert-warning">Brak uprawnień.</div>;
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-start mb-3">
-        <div>
-          <h4 className="mb-0">Moje</h4>
-          <div className="text-muted small">
-            Wyświetlasz {filtered.length} / {items.length}
+    <div className="container-fluid px-0">
+      {/* SEKCJA FILTRÓW - Zmniejszony odstęp od góry (mt-3) */}
+      <div className="mb-4 mt-3 pt-3 border-top">
+        <div className="d-flex flex-column align-items-start gap-4">
+          
+          {/* Przełącznik statusów - wspólna ramka */}
+          <div className="d-inline-flex border border-dark border-1 shadow-sm">
+            {["open", "closed", "all"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={`px-3 py-2 fw-bold text-uppercase border-0 rounded-0 ${
+                  statusMode === m ? "bg-dark text-white" : "bg-white text-dark"
+                }`}
+                style={{ 
+                  fontSize: '0.75rem',
+                  borderRight: m !== "all" ? "1px solid #000" : "none" 
+                }}
+                onClick={() => setStatusMode(m)}
+              >
+                {m === "open" ? "OTWARTE" : m === "closed" ? "ZAMKNIĘTE" : "WSZYSTKIE"}
+              </button>
+            ))}
           </div>
-        </div>
 
-        <div className="btn-group" role="group" aria-label="status">
-          <button
-            type="button"
-            className={`btn btn-sm ${
-              statusMode === "open" ? "btn-dark" : "btn-outline-dark"
-            }`}
-            onClick={() => setStatusMode("open")}
-          >
-            Otwarte
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${
-              statusMode === "closed" ? "btn-dark" : "btn-outline-dark"
-            }`}
-            onClick={() => setStatusMode("closed")}
-          >
-            Zamknięte
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${
-              statusMode === "all" ? "btn-dark" : "btn-outline-dark"
-            }`}
-            onClick={() => setStatusMode("all")}
-          >
-            Wszystkie
-          </button>
+          {/* Nagłówek sekcji - Duży odstęp (mt-5) */}
+          <div className="mt-5">
+            <h4 className="fw-bold text-uppercase mb-0">Moje</h4>
+            <div className="text-muted small">
+              Wyświetlasz {filtered.length} / {items.length}
+            </div>
+          </div>
         </div>
       </div>
 
-      {loading && <p className="text-muted">Ładowanie...</p>}
-      {error && <div className="alert alert-danger">{error}</div>}
+      {loading && <p className="text-muted p-3">Ładowanie...</p>}
+      {error && <div className="alert alert-danger mx-3">{error}</div>}
 
-      {!loading && !error && filtered.length === 0 && (
-        <p className="text-muted">Brak zgłoszeń dla wybranego filtra.</p>
-      )}
-
-      <div className="list-group">
+      <div className="list-group list-group-flush border-top">
         {filtered.map((r) => {
           const closed = isClosedRequest(r);
 
           return (
-            <div key={r.id} className="list-group-item">
-              <div className="d-flex justify-content-between align-items-start gap-3">
+            <div key={r.id} className="list-group-item py-3 px-0 bg-transparent border-bottom">
+              <div className="d-flex justify-content-between align-items-center gap-3">
                 <div>
-                  <div className="fw-bold">{r.title || `Zgłoszenie #${r.id}`}</div>
-                  <div className="text-muted small">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="fw-bold">{r.title || `Zgłoszenie #${r.id}`}</span>
+                    {/* Status jako zielony napis obok tytułu bez bordera */}
+                    <span 
+                      className={`small fw-bold text-uppercase ${closed ? "text-secondary" : "text-success"}`}
+                      style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}
+                    >
+                      {closed ? "zamknięte" : "otwarte"}
+                    </span>
+                  </div>
+                  <div className="text-muted small mt-1">
                     ID: {r.id} • Zgłaszający: {getReporterId(r) ?? "—"}
                   </div>
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
-                  <span className={`badge ${closed ? "bg-secondary" : "bg-success"}`}>
-                    {closed ? "zamknięte" : "otwarte"}
-                  </span>
-
                   <Link
-                    className="btn btn-sm btn-outline-secondary"
+                    className="btn btn-sm btn-outline-secondary text-uppercase fw-bold"
+                    style={{ fontSize: '0.7rem', padding: '5px 15px' }}
                     to={`/zgloszenia/${r.id}`}
                   >
                     Szczegóły
                   </Link>
 
-                  {/* Finalizacja tylko dla OTWARTYCH */}
                   {!closed && isEditor && (
                     <>
+                      {/* Przycisk finalizuj czarny w środku */}
                       <button
-                        className="btn btn-sm btn-outline-dark"
-                        onClick={() => navigate(`/entries/new?requestId=${r.id}`)}
+                        className="btn btn-sm btn-dark text-uppercase fw-bold"
+                        style={{ fontSize: '0.7rem', padding: '5px 15px' }}
+                        onClick={() => navigate(`/zgloszenia/${r.id}/finalize?requestId=${r.id}`)}
                       >
                         Finalizuj
                       </button>
 
                       <button
-                        className="btn btn-sm btn-outline-danger"
+                        className="btn btn-sm btn-outline-danger text-uppercase fw-bold"
+                        style={{ fontSize: '0.7rem', padding: '5px 15px' }}
                         onClick={() => handleUnassign(r.id)}
                       >
                         Cofnij przypisanie

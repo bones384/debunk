@@ -20,8 +20,7 @@ import RequestsMine from "./pages/RequestsMine.jsx";
 import RequestsAll from "./pages/RequestsAll.jsx";
 import RequestDetails from "./pages/RequestDetails.jsx";
 import RequestsIndex from "./pages/RequestsIndex.jsx";
-
-
+import FinalizeRequest from "./pages/FinalizeRequest.jsx";
 
 import EditorRequest from "./pages/EditorRequest.jsx";
 import RequestsList from "./pages/RequestsList.jsx";
@@ -55,6 +54,26 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
 
+                    {/* --- STRONY WYCIĄGNIĘTE POZA PANEL ZGŁOSZEŃ (bez nagłówka ZGŁOSZENIA) --- */}
+                    <Route
+                      path="/zgloszenia/:id"
+                      element={
+                        <ProtectedRoute>
+                          <RequestDetails />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path="/zgloszenia/:id/finalize"
+                      element={
+                        <ProtectedRoute>
+                          <FinalizeRequest />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* ----------------------------------------------------------------------- */}
+
                     <Route
                       path="/submissions/new"
                       element={
@@ -64,6 +83,7 @@ function App() {
                       }
                     />
 
+                    {/* PANEL ZGŁOSZEŃ (Tutaj Requests.jsx służy jako tło dla list) */}
                     <Route
                       path="/zgloszenia"
                       element={
@@ -75,16 +95,14 @@ function App() {
                       <Route index element={<RequestsIndex />} />
                       <Route path="unassigned" element={<RequestsUnassigned />} />
                       <Route path="mine" element={<RequestsMine />} />
-                      <Route
-                        path="all"
+                      <Route 
+                        path="all" 
                         element={
                           <ProtectedRoute requireSuperuser>
                             <RequestsAll />
                           </ProtectedRoute>
-                        }
+                        } 
                       />
-
-                      <Route path=":id" element={<RequestDetails />} />
                     </Route>
 
                     <Route

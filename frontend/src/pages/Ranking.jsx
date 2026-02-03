@@ -38,6 +38,12 @@ function Ranking() {
     return null;
   };
 
+  // Pomocnik do tworzenia linku
+  const formatUrl = (domain) => {
+    if (!domain) return "#";
+    return domain.startsWith("http") ? domain : `https://${domain}`;
+  };
+
   if (loading) return <div className="container pt-2 text-center">Ładowanie rankingu...</div>;
 
   return (
@@ -94,7 +100,15 @@ function Ranking() {
                         <small className="text-muted d-block">{item.articles || "Brak domeny"}</small>
                       </>
                     ) : (
-                      <div className="fw-bold fs-6 text-dark text-uppercase">{item.domain}</div>
+                      // KLIKALNA DOMENA TYLKO W RANKINGU DOMEN
+                      <a 
+                        href={formatUrl(item.domain)} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="fw-bold fs-6 text-dark text-uppercase text-decoration-none hover-link"
+                      >
+                        {item.domain} <i className="fa-solid fa-arrow-up-right-from-square ms-1 small text-muted"></i>
+                      </a>
                     )}
                   </td>
                   <td className="text-center">
