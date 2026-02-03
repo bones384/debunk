@@ -12,7 +12,10 @@ export default function NewEntry() {
   const [comment, setComment] = useState("");
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  
+  // Stany komunikatów
   const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api
@@ -48,43 +51,66 @@ export default function NewEntry() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setBusy(true);
 
     if (!title.trim()) {
       setError("Tytuł jest wymagany!");
+      setBusy(false);
       return;
     }
 
     if (selectedCategories.length === 0) {
       setError("Wybierz przynajmniej jedną kategorię!");
+      setBusy(false);
       return;
     }
 
     const goodArticles = articles.map((a) => a.trim()).filter(Boolean);
     if (goodArticles.length === 0) {
       setError("Podaj przynajmniej jeden artykuł.");
+      setBusy(false);
       return;
     }
 
     try {
+      // PANCERNY PAYLOAD - wysyłamy wszystkie możliwe nazwy pól
       const payload = {
         title: title.trim(),
+        
+        // Backend może oczekiwać 'comment' lub 'content' - wysyłamy oba
+        comment: comment.trim(),
         content: comment.trim(),
+        
+        // Backend może oczekiwać 'articles' lub 'sources' - wysyłamy oba
         articles: goodArticles,
+        sources: goodArticles,
+        
+        // ID tagów
         category_ids: selectedCategories,
         tag_ids: selectedCategories, 
       };
 
       await api.post("/api/requests/", payload);
 
-      const userType = (user?.profile?.user_type || "").toString().toLowerCase();
+      const userTypeRaw = user?.profile?.user_type ?? user?.user_type ?? "";
+      const userType = String(userTypeRaw).toLowerCase();
       const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
         userType.includes(w)
       );
       const isSuperuser = Boolean(user?.is_superuser);
 
+      // Redaktora przenosimy do zgłoszeń, zwykłego usera na główną
       navigate(isSuperuser || isEditor ? "/zgloszenia" : "/");
+      
     } catch (err) {
-      setError(err?.response?.data ?? err?.message);
+      console.error(err);
+      // Ładne wyświetlanie błędu z backendu
+      const msg = err?.response?.data 
+        ? JSON.stringify(err.response.data) 
+        : (err?.message || "Wystąpił błąd.");
+      setError(msg);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -93,7 +119,7 @@ export default function NewEntry() {
       <h3 className="mb-4">Dodaj nowe zgłoszenie</h3>
 
       {error && (
-        <div className="alert alert-danger small">{JSON.stringify(error)}</div>
+        <div className="alert alert-danger small">{error}</div>
       )}
 
       <form onSubmit={handleSubmit}>
@@ -106,6 +132,7 @@ export default function NewEntry() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Tytuł zgłoszenia"
             required
+            disabled={busy}
           />
         </div>
 
@@ -116,10 +143,11 @@ export default function NewEntry() {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Opcjonalny komentarz"
+            disabled={busy}
           />
         </div>
 
-        {/* Sekcja Kategorii z Checkboxami - identycznie jak w FinalizeRequest */}
+        {/* Sekcja Kategorii - PRZYWRÓCONY STYL (gap-3) */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase d-block">Wybierz Kategorie *</label>
           <div className="d-flex flex-wrap gap-3 p-3 bg-light rounded border mb-3">
@@ -132,6 +160,7 @@ export default function NewEntry() {
                   style={{ width: "1.2em", height: "1.2em", cursor: "pointer", border: "1px solid #ced4da" }}
                   checked={selectedCategories.includes(cat.id)}
                   onChange={() => handleCheckboxChange(cat.id)}
+                  disabled={busy}
                 />
                 <label className="form-check-label ms-2" htmlFor={`cat-${cat.id}`} style={{ cursor: "pointer" }}>
                   {cat.name}
@@ -140,7 +169,6 @@ export default function NewEntry() {
             ))}
           </div>
 
-          <label className="form-label fw-bold text-muted small text-uppercase">Wybrane:</label>
           <div className="d-flex gap-2 flex-wrap">
             {selectedCategories.length > 0 ? (
               categories
@@ -165,13 +193,15 @@ export default function NewEntry() {
                 className="form-control"
                 value={a}
                 onChange={(e) => handleArticleChange(i, e.target.value)}
-                placeholder="https://…"
+                placeholder="https://..."
                 required
+                disabled={busy}
               />
               <button
                 type="button"
                 className="btn btn-outline-danger"
                 onClick={() => handleRemoveArticle(i)}
+                disabled={busy}
               >
                 Usuń
               </button>
@@ -181,13 +211,14 @@ export default function NewEntry() {
             type="button"
             className="btn btn-sm btn-outline-secondary"
             onClick={handleAddArticle}
+            disabled={busy}
           >
             Dodaj artykuł
           </button>
         </div>
 
-        <button className="btn btn-primary" type="submit">
-          Wyślij zgłoszenie
+        <button className="btn btn-primary" type="submit" disabled={busy}>
+          {busy ? "Wysyłanie..." : "Wyślij zgłoszenie"}
         </button>
       </form>
     </div>

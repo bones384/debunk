@@ -22,7 +22,6 @@ export default function FinalizeRequest() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Pobranie listy wszystkich kategorii z API
     api.get("/api/categories/")
       .then((res) => setCategories(res.data))
       .catch((err) => console.error("Błąd kategorii", err));
@@ -32,18 +31,20 @@ export default function FinalizeRequest() {
         .then((res) => {
           const data = res.data;
           setTitle(data.title || "");
-          setContent(data.comment || "");
+          setContent(data.content || data.comment || "");
 
-          // Inicjalizacja kategorii zaznaczonych przez użytkownika w zgłoszeniu
           if (data.tags && Array.isArray(data.tags)) {
-            setSelectedCategories(data.tags.map(t => t.id));
+            const ids = data.tags.map(t => (typeof t === 'object' ? t.id : t));
+            setSelectedCategories(ids);
           }
-          if (data.articles && data.articles.length > 0) {
+          if (data.articles && Array.isArray(data.articles)) {
             setSources(data.articles);
           }
         })
-        .catch(() => setError("Nie udało się pobrać danych."))
+        .catch(() => setError("Nie udało się pobrać danych zgłoszenia."))
         .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, [requestId]);
 
@@ -71,18 +72,35 @@ export default function FinalizeRequest() {
     setSaving(true);
     setError(null);
 
+    const cleanSources = sources.filter(s => s.trim() !== "");
+    if (cleanSources.length === 0) {
+      setError("Musisz dodać co najmniej jedno źródło.");
+      setSaving(false);
+      return;
+    }
+    if (selectedCategories.length === 0) {
+      setError("Musisz wybrać co najmniej jedną kategorię.");
+      setSaving(false);
+      return;
+    }
+
     try {
+      // POPRAWKA: Używamy nazw, których wymaga backend (widocznych na błędzie)
       await api.post("/api/entries/", {
         title: title.trim(),
         content: content.trim(),
         is_truthful: isTruthful,
-        article_urls: sources.filter(s => s !== ""),
-        category_ids: selectedCategories,
+        sources: cleanSources,       // Backend: sources
+        tag_ids: selectedCategories, // Backend: tag_ids
         request_id: requestId
       });
       navigate("/");
     } catch (err) {
-      setError(err.response?.data ? JSON.stringify(err.response.data) : "Błąd serwera.");
+      if (err.response?.data) {
+        setError(JSON.stringify(err.response.data));
+      } else {
+        setError("Błąd serwera przy tworzeniu wpisu.");
+      }
     } finally {
       setSaving(false);
     }
@@ -96,30 +114,34 @@ export default function FinalizeRequest() {
 
       <form onSubmit={handleSubmit} className="bg-white p-4 shadow-sm rounded">
 
-        {/* Sekcja Kategorii z Checkboxami */}
+        {/* Sekcja Kategorii - POPRAWIONY STYL CHECKBOXÓW */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase d-block">Wybierz Kategorie</label>
-          <div className="d-flex flex-wrap gap-3 p-3 bg-light rounded border mb-3">
+          {/* Używamy gap-2 i d-inline-flex dla lepszego układu */}
+          <div className="d-flex flex-wrap gap-2 p-3 bg-light rounded border mb-3">
             {categories.map((cat) => (
-              <div key={cat.id} className="form-check d-flex align-items-center">
+              <div key={cat.id} className="form-check d-inline-flex align-items-center m-0">
                 <input
                   className="form-check-input border-secondary"
                   type="checkbox"
                   id={`cat-${cat.id}`}
-                  style={{ width: "1.2em", height: "1.2em", cursor: "pointer", border: "1px solid #ced4da" }}
+                  style={{ width: "1.2em", height: "1.2em", cursor: "pointer", marginTop: 0 }}
                   checked={selectedCategories.includes(cat.id)}
                   onChange={() => handleCheckboxChange(cat.id)}
                 />
-                <label className="form-check-label ms-2" htmlFor={`cat-${cat.id}`} style={{ cursor: "pointer" }}>
+                <label 
+                  className="form-check-label ms-2 small text-uppercase fw-bold" 
+                  htmlFor={`cat-${cat.id}`} 
+                  style={{ cursor: "pointer", userSelect: "none" }}
+                >
                   {cat.name}
                 </label>
               </div>
             ))}
           </div>
 
-          {/* Dynamiczny podgląd wybranych kategorii pod spodem */}
           <label className="form-label fw-bold text-muted small text-uppercase">Wybrane:</label>
-          <div className="d-flex gap-2 flex-wrap min-vh-10">
+          <div className="d-flex gap-2 flex-wrap">
             {selectedCategories.length > 0 ? (
               categories
                 .filter(c => selectedCategories.includes(c.id))
@@ -134,19 +156,17 @@ export default function FinalizeRequest() {
           </div>
         </div>
 
-        {/* Tytuł */}
+        {/* Reszta formularza */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase">Tytuł</label>
           <input className="form-control bg-light" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
 
-        {/* Treść */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase">Treść</label>
           <textarea className="form-control bg-light" rows={6} value={content} onChange={(e) => setContent(e.target.value)} required />
         </div>
 
-        {/* Werdykt */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase d-block">Werdykt</label>
           <div className="d-flex gap-4">
@@ -161,7 +181,6 @@ export default function FinalizeRequest() {
           </div>
         </div>
 
-        {/* Źródła */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase">Źródła (min. 1)</label>
           <div className="d-flex gap-2 mb-3">
@@ -178,21 +197,13 @@ export default function FinalizeRequest() {
           </div>
         </div>
 
-        {error && (
-          <div className="alert alert-danger small mb-4">
-            {error}
-          </div>
-        )}
+        {error && <div className="alert alert-danger small mb-4">{error}</div>}
 
         <div className="d-flex gap-2 pt-3 border-top">
           <button type="submit" className="btn btn-dark fw-bold px-4" disabled={saving}>
             {saving ? "TWORZENIE..." : "UTWÓRZ"}
           </button>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={() => navigate(`/zgloszenia/${requestId}`)} // Zamiast navigate("/") lub navigate(-1)
-          >
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(`/zgloszenia/${requestId}`)} disabled={saving}>
             Anuluj
           </button>
         </div>
