@@ -78,7 +78,8 @@ export default function RequestDetail() {
     setBusy(true);
     setError("");
     try {
-      await api.post(`/api/users/${authorId}/request/`);
+      //await api.post(`/api/users/${authorId}/request/`);
+      await api.patch(`/api/users/${authorId}/role/`, {user_type: "redactor"});
       navigate("/prosby");
     } catch (e) {
       setError("Nie udało się zatwierdzić prośby.");
