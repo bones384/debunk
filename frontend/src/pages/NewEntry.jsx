@@ -17,11 +17,12 @@ export default function NewEntry() {
 
   const [error, setError] = useState(null);
 
-  // Pobierz kategorie z backendu
+  
   useEffect(() => {
-    api.get("/api/categories/")
-      .then(res => setCategories(res.data))
-      .catch(err => console.error("Błąd pobierania kategorii", err));
+    api
+      .get("/api/categories/")
+      .then((res) => setCategories(res.data))
+      .catch((err) => console.error("Błąd pobierania kategorii", err));
   }, []);
 
   if (!user) {
@@ -66,7 +67,7 @@ export default function NewEntry() {
         comment: comment.trim(),
         articles: goodArticles,
         category_ids: selectedCategories,
-        tag_ids: selectedCategories  // KATEGORIE traktujemy jako TAGI
+        tag_ids: selectedCategories, 
       };
 
       console.log("sending data:", payload);
@@ -74,7 +75,17 @@ export default function NewEntry() {
       const res = await api.post("/api/requests/", payload);
 
       console.log("backend response:", res.data);
-      navigate("/zgloszenia");
+
+      
+      const userType = (user?.profile?.user_type || "")
+        .toString()
+        .toLowerCase();
+      const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
+        userType.includes(w)
+      );
+      const isSuperuser = Boolean(user?.is_superuser);
+
+      navigate(isSuperuser || isEditor ? "/zgloszenia" : "/");
     } catch (err) {
       console.error("SUBMIT ERROR:", err);
       setError(err?.response?.data ?? err?.message);
@@ -86,9 +97,7 @@ export default function NewEntry() {
       <h3 className="mb-4">Dodaj nowe zgłoszenie</h3>
 
       {error && (
-        <div className="alert alert-danger small">
-          {JSON.stringify(error)}
-        </div>
+        <div className="alert alert-danger small">{JSON.stringify(error)}</div>
       )}
 
       <form onSubmit={handleSubmit}>
