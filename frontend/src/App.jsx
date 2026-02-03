@@ -54,11 +54,21 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
 
-                    {/* --- STRONY WYCIĄGNIĘTE POZA PANEL ZGŁOSZEŃ (bez nagłówka ZGŁOSZENIA) --- */}
+                    {/* --- POPRAWKA: Nowy adres dla prośby o redaktora --- */}
+                    <Route 
+                      path="/editor-request" 
+                      element={
+                        <ProtectedRoute>
+                          <EditorRequest />
+                        </ProtectedRoute>
+                      } 
+                    />
+
+                    {/* --- Detale zgłoszeń --- */}
                     <Route
                       path="/zgloszenia/:id"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requireEditorOrSuperuser>
                           <RequestDetails />
                         </ProtectedRoute>
                       }
@@ -67,13 +77,13 @@ function App() {
                     <Route
                       path="/zgloszenia/:id/finalize"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requireEditorOrSuperuser>
                           <FinalizeRequest />
                         </ProtectedRoute>
                       }
                     />
-                    {/* ----------------------------------------------------------------------- */}
-
+                    
+                    {/* --- Dodawanie nowego zgłoszenia (artykułu do sprawdzenia) --- */}
                     <Route
                       path="/submissions/new"
                       element={
@@ -83,11 +93,11 @@ function App() {
                       }
                     />
 
-                    {/* PANEL ZGŁOSZEŃ (Tutaj Requests.jsx służy jako tło dla list) */}
+                    {/* --- PANEL REDAKTORSKI --- */}
                     <Route
                       path="/zgloszenia"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requireEditorOrSuperuser>
                           <Requests />
                         </ProtectedRoute>
                       }
@@ -105,6 +115,7 @@ function App() {
                       />
                     </Route>
 
+                    {/* --- ADMIN: Prośby o rangę --- */}
                     <Route
                       path="/prosby"
                       element={
