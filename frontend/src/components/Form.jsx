@@ -17,7 +17,6 @@ function Form({ route, method, showSwitchLinks = true }) {
   const title = isLogin ? "Zaloguj" : "Zarejestruj";
 
   useEffect(() => {
-    
     if (!isRegister) setGoToEditorRequest(false);
   }, [isRegister]);
 
@@ -33,7 +32,6 @@ function Form({ route, method, showSwitchLinks = true }) {
     e.preventDefault();
     setErrorMessage("");
 
-    
     if (isRegister) {
       const passwordRegex =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{6,}$/;
@@ -47,19 +45,16 @@ function Form({ route, method, showSwitchLinks = true }) {
     }
 
     try {
-     
       const res = await api.post(route, { username, password });
 
       if (isLogin) {
-        
         saveTokensAndRedirect(res.data.access, res.data.refresh, "/");
         return;
       }
 
-     
       const tokenRes = await api.post("/api/auth/token/", { username, password });
 
-      const redirectTo = goToEditorRequest ? "/zgloszenia/new" : "/";
+      const redirectTo = goToEditorRequest ? "/editor-request" : "/";
       saveTokensAndRedirect(tokenRes.data.access, tokenRes.data.refresh, redirectTo);
     } catch (error) {
       console.log("Pełny błąd z serwera:", error.response?.data);
@@ -114,7 +109,6 @@ function Form({ route, method, showSwitchLinks = true }) {
         />
       </div>
 
-      {/* Checkbox tylko na rejestracji */}
       {isRegister && (
         <div className="form-check mb-3">
           <input

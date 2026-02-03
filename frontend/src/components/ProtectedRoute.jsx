@@ -61,7 +61,6 @@ export default function ProtectedRoute({
           }
         }
 
-        // jeśli wymagana jest superuser lub editor
         if (requireEditorOrSuperuser) {
           const me = await api.get("/api/users/me/");
           const su = Boolean(me?.data?.is_superuser);
