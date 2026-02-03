@@ -46,9 +46,9 @@ export default function RequestDetail() {
   const openProtectedImage = async (fileUrl) => {
     try {
       const response = await api.get(fileUrl, { responseType: "blob" });
-      
+
       const blobUrl = window.URL.createObjectURL(response.data);
-      
+
       window.open(blobUrl, "_blank");
     } catch (err) {
       console.error(err);
@@ -78,7 +78,8 @@ export default function RequestDetail() {
     setBusy(true);
     setError("");
     try {
-      await api.post(`/api/users/${authorId}/request/`);
+      //await api.post(`/api/users/${authorId}/request/`);
+      await api.patch(`/api/users/${authorId}/role/`, {user_type: "redactor"});
       navigate("/prosby");
     } catch (e) {
       setError("Nie udało się zatwierdzić prośby.");
@@ -119,8 +120,8 @@ export default function RequestDetail() {
                 <h6 className="text-uppercase small fw-bold text-muted mb-2">Kategorie</h6>
                 <div className="d-flex flex-wrap gap-2">
                   {item.tags.map((t, idx) => (
-                    <span key={idx} className="badge bg-secondary fw-normal">
-                      {String(t)}
+                    <span key={idx} className="badge text-bg-secondary">
+                      {String(t.name)}
                     </span>
                   ))}
                 </div>
@@ -145,10 +146,10 @@ export default function RequestDetail() {
                     return (
                       <li key={s.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <span className="text-truncate me-3" style={{ maxWidth: "300px" }}>
-                          {s.image.split("/").pop()} 
+                          {s.image.split("/").pop()}
                         </span>
-                        
-                        <button 
+
+                        <button
                           className="btn btn-sm btn-outline-primary fw-bold"
                           onClick={() => openProtectedImage(fullUrl)}
                         >

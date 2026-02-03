@@ -127,11 +127,15 @@ class ApplicationListSerializer(serializers.ModelSerializer):
 class ApplicationDetailSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     uploaded_scans = ApplicationDocumentSerializer(source='scans', many=True, read_only=True)
+    tags = serializers.SerializerMethodField(read_only=True)
 
+    def get_tags(self, obj):
+        tags = Tag.objects.filter(id__in=obj.tags)
+        return TagSerializer(tags, many=True).data
     class Meta:
         model = Application
         fields = [
-            'id', 'author', 'title', 'content', 'tags', 
+            'id', 'author', 'title', 'content', 'tags',
             'is_accepted', 'created_at', 'uploaded_scans'
         ]
 
@@ -142,7 +146,6 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         required=True
     )
     uploaded_scans = ApplicationDocumentSerializer(source='scans', many=True, read_only=True)
-    
     author = serializers.ReadOnlyField(source='author.username')
 
     class Meta:
@@ -158,6 +161,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
 
 
         }
+
     def create(self, validated_data):
         scans_data = validated_data.pop('scans', [])
         
