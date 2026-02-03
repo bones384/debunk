@@ -51,9 +51,6 @@ export default function RequestsList() {
               <strong>{r.title || `Prośba #${r.id}`}</strong>
               <span className="text-muted">{r.author?.username || ""}</span>
             </div>
-            <small className="text-muted">
-              {r.tags?.length ? `Kategorie: ${r.tags.join(", ")}` : "Brak kategorii"}
-            </small>
           </Link>
         ))}
       </div>

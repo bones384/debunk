@@ -102,7 +102,7 @@ export default function RequestDetail() {
                 <div className="d-flex flex-wrap gap-2">
                   {item.tags.map((t, idx) => (
                     <span key={idx} className="badge text-bg-secondary">
-                      {String(t)}
+                      {String(t.name)}
                     </span>
                   ))}
                 </div>
