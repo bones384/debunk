@@ -85,13 +85,12 @@ export default function FinalizeRequest() {
     }
 
     try {
-      // POPRAWKA: Używamy nazw, których wymaga backend (widocznych na błędzie)
       await api.post("/api/entries/", {
         title: title.trim(),
         content: content.trim(),
         is_truthful: isTruthful,
-        sources: cleanSources,       // Backend: sources
-        tag_ids: selectedCategories, // Backend: tag_ids
+        sources: cleanSources,       
+        tag_ids: selectedCategories, 
         request_id: requestId
       });
       navigate("/");
@@ -114,10 +113,8 @@ export default function FinalizeRequest() {
 
       <form onSubmit={handleSubmit} className="bg-white p-4 shadow-sm rounded">
 
-        {/* Sekcja Kategorii - POPRAWIONY STYL CHECKBOXÓW */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase d-block">Wybierz Kategorie</label>
-          {/* Używamy gap-2 i d-inline-flex dla lepszego układu */}
           <div className="d-flex flex-wrap gap-2 p-3 bg-light rounded border mb-3">
             {categories.map((cat) => (
               <div key={cat.id} className="form-check d-inline-flex align-items-center m-0">
@@ -156,7 +153,6 @@ export default function FinalizeRequest() {
           </div>
         </div>
 
-        {/* Reszta formularza */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase">Tytuł</label>
           <input className="form-control bg-light" value={title} onChange={(e) => setTitle(e.target.value)} required />

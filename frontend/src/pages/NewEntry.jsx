@@ -13,7 +13,6 @@ export default function NewEntry() {
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   
-  // Stany komunikatów
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +31,6 @@ export default function NewEntry() {
     );
   }
 
-  // Obsługa zaznaczania checkboxów
   const handleCheckboxChange = (categoryId) => {
     setSelectedCategories((prev) =>
       prev.includes(categoryId)
@@ -73,19 +71,15 @@ export default function NewEntry() {
     }
 
     try {
-      // PANCERNY PAYLOAD - wysyłamy wszystkie możliwe nazwy pól
       const payload = {
         title: title.trim(),
         
-        // Backend może oczekiwać 'comment' lub 'content' - wysyłamy oba
         comment: comment.trim(),
         content: comment.trim(),
         
-        // Backend może oczekiwać 'articles' lub 'sources' - wysyłamy oba
         articles: goodArticles,
         sources: goodArticles,
         
-        // ID tagów
         category_ids: selectedCategories,
         tag_ids: selectedCategories, 
       };
@@ -99,12 +93,10 @@ export default function NewEntry() {
       );
       const isSuperuser = Boolean(user?.is_superuser);
 
-      // Redaktora przenosimy do zgłoszeń, zwykłego usera na główną
       navigate(isSuperuser || isEditor ? "/zgloszenia" : "/");
       
     } catch (err) {
       console.error(err);
-      // Ładne wyświetlanie błędu z backendu
       const msg = err?.response?.data 
         ? JSON.stringify(err.response.data) 
         : (err?.message || "Wystąpił błąd.");
@@ -147,7 +139,6 @@ export default function NewEntry() {
           />
         </div>
 
-        {/* Sekcja Kategorii - PRZYWRÓCONY STYL (gap-3) */}
         <div className="mb-4">
           <label className="form-label fw-bold text-muted small text-uppercase d-block">Wybierz Kategorie *</label>
           <div className="d-flex flex-wrap gap-3 p-3 bg-light rounded border mb-3">
