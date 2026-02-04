@@ -4,9 +4,14 @@ import { jwtDecode } from "jwt-decode";
 import api from "../api";
 import { REFRESH_TOKEN, ACCESS_TOKEN, AUTH_CHANGED_EVENT } from "../constants.js";
 
-export default function ProtectedRoute({ children, requireSuperuser = false }) {
+export default function ProtectedRoute({
+  children,
+  requireSuperuser = false,
+  requireEditorOrSuperuser = false,
+}) {
+
   const [status, setStatus] = useState("loading"); 
-  const [isSuperuser, setIsSuperuser] = useState(false);
+  const [roleOk, setRoleOk] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -50,14 +55,32 @@ export default function ProtectedRoute({ children, requireSuperuser = false }) {
         if (requireSuperuser) {
           const me = await api.get("/api/users/me/");
           const su = Boolean(me?.data?.is_superuser);
-          if (mounted) {
-            setIsSuperuser(su);
-            setStatus("ok");
+          if (!su) {
+            if (mounted) setStatus("forbidden");
+            return;
           }
-          return;
         }
 
-        if (mounted) setStatus("ok");
+        if (requireEditorOrSuperuser) {
+          const me = await api.get("/api/users/me/");
+          const su = Boolean(me?.data?.is_superuser);
+          const userType = (me?.data?.profile?.user_type || "")
+            .toString().toLowerCase();
+          const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
+            userType.includes(w)
+          );
+
+          if (!su && !isEditor) {
+            if (mounted) setStatus("forbidden");
+            return;
+          }
+        }
+
+        if (mounted) {
+          setRoleOk(true);
+          setStatus("ok");
+        }
+
       } catch {
         if (mounted) setStatus("unauthorized");
       }
@@ -68,7 +91,7 @@ export default function ProtectedRoute({ children, requireSuperuser = false }) {
     return () => {
       mounted = false;
     };
-  }, [requireSuperuser]);
+  }, [requireSuperuser, requireEditorOrSuperuser]);
 
   if (status === "loading") return <div>Loading...</div>;
 
@@ -76,7 +99,7 @@ export default function ProtectedRoute({ children, requireSuperuser = false }) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (requireSuperuser && !isSuperuser) {
+  if (!roleOk) {
     return <Navigate to="/" replace />;
   }
 

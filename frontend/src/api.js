@@ -91,4 +91,61 @@ api.interceptors.response.use(
   }
 );
 
+
+// Requests (zgłoszenia)
+export async function getUnassignedRequests() {
+  const res = await api.get("/api/requests/unassigned/");
+  return res.data;
+}
+
+export async function getMyRequests() {
+  const res = await api.get("/api/requests/assigned/");
+  return res.data;
+}
+
+export async function getRequest(id) {
+  const res = await api.get(`/api/requests/${id}/`);
+  return res.data;
+}
+
+export async function assignRequest(id) {
+  const res = await api.post(`/api/requests/${id}/assign/`);
+  return res.data;
+}
+
+export async function unassignRequest(id) {
+  const res = await api.delete(`/api/requests/${id}/assign/`);
+  return res.data;
+}
+
+function isClosedRequest(r) {
+  return Boolean(r?.closed_at ?? r?.closedAt ?? r?.closed);
+}
+
+export async function getAllOpenRequests() {
+  const res = await api.get("/api/requests/");
+  const data = res.data;
+
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.results)
+      ? data.results
+      : [];
+
+  return list.filter((r) => !isClosedRequest(r));
+}
+
+export async function getClosedRequests() {
+  const res = await api.get("/api/requests/closed/");
+  const data = res.data;
+
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.results)
+      ? data.results
+      : [];
+
+  return list;
+}
+
 export default api;

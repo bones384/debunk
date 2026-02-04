@@ -39,9 +39,15 @@ export default function Header() {
 
   const isSuperuser = Boolean(user?.is_superuser);
 
-  const userType = (user?.profile?.user_type || "").toString().toLowerCase();
-  const isEditor = userType.includes("redaktor") || userType.includes("editor");
+  const userTypeRaw = user?.profile?.user_type ?? user?.user_type ?? "";
+  const userType = String(userTypeRaw).toLowerCase();
+
+  const isEditor = ["redaktor", "editor", "redactor"].some((w) =>
+    userType.includes(w)
+  );
+
   const canRequestEditor = loggedIn && !isSuperuser && !isEditor;
+  const canSeeRequests = loggedIn && (isSuperuser || isEditor);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -76,12 +82,29 @@ export default function Header() {
             Debunk
           </Link>
 
+          <Link to="/" className="nav-link-custom me-4">
+            Strona Główna
+          </Link>
+
           <Link to="/ranking" className="nav-link-custom me-auto">
             Ranking
           </Link>
 
           {loggedIn ? (
             <div className="ms-auto d-flex align-items-center" ref={menuRef}>
+              
+              {canRequestEditor && (
+                <Link 
+                  to="/editor-request" 
+                  className="nav-link-custom me-4 d-flex align-items-center"
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  <i className="fa-solid fa-user-pen me-2"></i>
+                  Zostań Redaktorem
+                </Link>
+              )}
+              {/* -------------------------------------------------------- */}
+
               {isSuperuser && (
                 <>
                   <Link to="/prosby" className="nav-link-custom me-4">
@@ -92,17 +115,20 @@ export default function Header() {
                   </Link>
                 </>
               )}
+              
+              {canSeeRequests && (
+                <Link to="/zgloszenia" className="nav-link-custom me-4">
+                  Zgłoszenia
+                </Link>
+              )}
 
               <span className="text-white small me-2 d-flex align-items-center lh-1">
                 <i className="fa-solid fa-user me-1" aria-hidden="true"></i>
                 <span className="fw-bolder">{user?.username}</span>
                 {isSuperuser ? (
                   <span className="fw-normal ms-2"> | administrator</span>
-                ) : user?.profile?.user_type ? (
-                  <span className="fw-normal ms-2">
-                    {" "}
-                    | {user.profile.user_type}
-                  </span>
+                ) : isEditor ? (
+                  <span className="fw-normal ms-2"> | redaktor</span>
                 ) : null}
               </span>
 
@@ -119,25 +145,8 @@ export default function Header() {
                 {menuOpen && (
                   <div
                     className="position-absolute end-0 mt-2 bg-white rounded shadow"
-                    style={{ minWidth: 240, zIndex: 2000 }}
+                    style={{ minWidth: 200, zIndex: 2000 }}
                   >
-                    {canRequestEditor && (
-                      <button
-                        type="button"
-                        className="dropdown-item d-flex align-items-center w-100 px-3 py-2 border-0 bg-transparent text-start"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          navigate("/zgloszenia/new");
-                        }}
-                      >
-                        <i
-                          className="fa-solid fa-user-pen me-2"
-                          aria-hidden="true"
-                        ></i>
-                        Poproś o status Redaktora
-                      </button>
-                    )}
-
                     <button
                       type="button"
                       className="dropdown-item d-flex align-items-center w-100 px-3 py-2 border-0 bg-transparent text-start"

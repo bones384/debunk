@@ -14,6 +14,13 @@ import EditEntry from "./pages/EditEntry.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Accounts from "./pages/Accounts.jsx";
 import Ranking from "./pages/Ranking.jsx";
+import Requests from "./pages/Requests.jsx";
+import RequestsUnassigned from "./pages/RequestsUnassigned.jsx";
+import RequestsMine from "./pages/RequestsMine.jsx";
+import RequestsAll from "./pages/RequestsAll.jsx";
+import RequestDetails from "./pages/RequestDetails.jsx";
+import RequestsIndex from "./pages/RequestsIndex.jsx";
+import FinalizeRequest from "./pages/FinalizeRequest.jsx";
 
 import EditorRequest from "./pages/EditorRequest.jsx";
 import RequestsList from "./pages/RequestsList.jsx";
@@ -47,15 +54,68 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
 
-                    <Route
-                      path="/zgloszenia/new"
+                    {/* --- POPRAWKA: Nowy adres dla prośby o redaktora --- */}
+                    <Route 
+                      path="/editor-request" 
                       element={
                         <ProtectedRoute>
                           <EditorRequest />
                         </ProtectedRoute>
+                      } 
+                    />
+
+                    {/* --- Detale zgłoszeń --- */}
+                    <Route
+                      path="/zgloszenia/:id"
+                      element={
+                        <ProtectedRoute requireEditorOrSuperuser>
+                          <RequestDetails />
+                        </ProtectedRoute>
                       }
                     />
 
+                    <Route
+                      path="/zgloszenia/:id/finalize"
+                      element={
+                        <ProtectedRoute requireEditorOrSuperuser>
+                          <FinalizeRequest />
+                        </ProtectedRoute>
+                      }
+                    />
+                    
+                    {/* --- Dodawanie nowego zgłoszenia (artykułu do sprawdzenia) --- */}
+                    <Route
+                      path="/submissions/new"
+                      element={
+                        <ProtectedRoute>
+                          <NewEntry />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* --- PANEL REDAKTORSKI --- */}
+                    <Route
+                      path="/zgloszenia"
+                      element={
+                        <ProtectedRoute requireEditorOrSuperuser>
+                          <Requests />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route index element={<RequestsIndex />} />
+                      <Route path="unassigned" element={<RequestsUnassigned />} />
+                      <Route path="mine" element={<RequestsMine />} />
+                      <Route 
+                        path="all" 
+                        element={
+                          <ProtectedRoute requireSuperuser>
+                            <RequestsAll />
+                          </ProtectedRoute>
+                        } 
+                      />
+                    </Route>
+
+                    {/* --- ADMIN: Prośby o rangę --- */}
                     <Route
                       path="/prosby"
                       element={

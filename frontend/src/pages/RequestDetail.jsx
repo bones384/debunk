@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 
-function absoluteUrl(url) {
+function getFullUrl(url) {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   const base = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
@@ -43,6 +43,19 @@ export default function RequestDetail() {
     return Array.isArray(item.uploaded_scans) ? item.uploaded_scans : [];
   }, [item]);
 
+  const openProtectedImage = async (fileUrl) => {
+    try {
+      const response = await api.get(fileUrl, { responseType: "blob" });
+
+      const blobUrl = window.URL.createObjectURL(response.data);
+
+      window.open(blobUrl, "_blank");
+    } catch (err) {
+      console.error(err);
+      alert("Nie udało się otworzyć pliku. Sprawdź uprawnienia lub logowanie.");
+    }
+  };
+
   async function handleReject() {
     if (!confirm("Na pewno odrzucić prośbę?")) return;
     setBusy(true);
@@ -65,7 +78,8 @@ export default function RequestDetail() {
     setBusy(true);
     setError("");
     try {
-      await api.post(`/api/users/${authorId}/request/`);
+      //await api.post(`/api/users/${authorId}/request/`);
+      await api.patch(`/api/users/${authorId}/role/`, {user_type: "redactor"});
       navigate("/prosby");
     } catch (e) {
       setError("Nie udało się zatwierdzić prośby.");
@@ -82,71 +96,79 @@ export default function RequestDetail() {
       {!item && !error && <p className="text-muted">Ładowanie...</p>}
 
       {item && (
-        <div className="card">
+        <div className="card shadow-sm border-0">
           <div className="card-body">
-            <h5 className="card-title">{item.title || "Prośba o status redaktora"}</h5>
+            <h5 className="card-title fw-bold text-uppercase mb-3">
+              {item.title || "Prośba o status redaktora"}
+            </h5>
 
-            <p className="text-muted mb-2">
-              Użytkownik: {item.author?.username || "?"}
-            </p>
+            <div className="mb-2">
+              <span className="text-muted small text-uppercase fw-bold">Użytkownik: </span>
+              <span>{item.author?.username || "?"}</span>
+            </div>
 
-            <p className="mb-2">
-              <strong>Status:</strong>{" "}
-              {item.is_accepted ? "zaakceptowana" : "nierozpatrzona"}
-            </p>
+            <div className="mb-3">
+              <span className="text-muted small text-uppercase fw-bold">Status: </span>
+              <span className={item.is_accepted ? "text-success fw-bold" : "text-warning fw-bold"}>
+                {item.is_accepted ? "ZAAKCEPTOWANA" : "NIEROZPATRZONA"}
+              </span>
+            </div>
 
             {item.tags?.length > 0 && (
-              <>
-                <hr />
-                <h6>Kategorie</h6>
+              <div className="mb-3">
+                <hr className="text-muted opacity-25" />
+                <h6 className="text-uppercase small fw-bold text-muted mb-2">Kategorie</h6>
                 <div className="d-flex flex-wrap gap-2">
                   {item.tags.map((t, idx) => (
                     <span key={idx} className="badge text-bg-secondary">
-                      {String(t)}
+                      {String(t.name)}
                     </span>
                   ))}
                 </div>
-              </>
+              </div>
             )}
 
             {item.content && (
-              <>
-                <hr />
-                <h6>Treść</h6>
-                <p className="mb-0">{item.content}</p>
-              </>
+              <div className="mb-3">
+                <hr className="text-muted opacity-25" />
+                <h6 className="text-uppercase small fw-bold text-muted mb-2">Treść / Uzasadnienie</h6>
+                <p className="mb-0 bg-light p-3 rounded">{item.content}</p>
+              </div>
             )}
 
             {scans.length > 0 && (
-              <>
-                <hr />
-                <h6>Dokumenty / skany</h6>
-                <ul className="mb-0">
+              <div className="mb-4">
+                <hr className="text-muted opacity-25" />
+                <h6 className="text-uppercase small fw-bold text-muted mb-2">Załączone dokumenty</h6>
+                <ul className="list-group">
                   {scans.map((s) => {
-                    const url = absoluteUrl(s.image);
+                    const fullUrl = getFullUrl(s.image);
                     return (
-                      <li key={s.id}>
-                        {url ? (
-                          <a href={url} target="_blank" rel="noreferrer">
-                            {url}
-                          </a>
-                        ) : (
-                          <span>plik</span>
-                        )}
+                      <li key={s.id} className="list-group-item d-flex justify-content-between align-items-center">
+                        <span className="text-truncate me-3" style={{ maxWidth: "300px" }}>
+                          {s.image.split("/").pop()}
+                        </span>
+
+                        <button
+                          className="btn btn-sm btn-outline-primary fw-bold"
+                          onClick={() => openProtectedImage(fullUrl)}
+                        >
+                          <i className="fa-solid fa-eye me-2"></i> PODGLĄD
+                        </button>
                       </li>
                     );
                   })}
                 </ul>
-              </>
+              </div>
             )}
 
-            <hr />
+            <hr className="mt-4 mb-3" />
             <div className="d-flex gap-2">
-              <button className="btn btn-success" onClick={handleApprove} disabled={busy}>
-                Zatwierdź
+              <button className="btn btn-success px-4 fw-bold" onClick={handleApprove} disabled={busy}>
+                ZATWIERDŹ
               </button>
-              <button className="btn btn-outline-danger" onClick={handleReject} disabled={busy}>
-                Odrzuć
+              <button className="btn btn-outline-danger px-4 fw-bold" onClick={handleReject} disabled={busy}>
+                ODRZUĆ
               </button>
             </div>
           </div>
