@@ -9,24 +9,20 @@
 
 setup: 
 
-na nie windowsie python3 zamiast python etc etc jak nie jestes na windowsie to pewnie wiesz co zrobic
-stworzyc nowe wirtualne srodowisko pythona w folderze projektu, aktywowac je, kazac mu pobrac wymagania z requirements.txt
+na unixowych systemach python3 zamiast python 
+stworzyć nowe wirtualne środowisko pythona w folderze projektu, aktywować je, mu pobrac wymagania z requirements.txt:
 
 python -m venv env
 .\env\Scripts\activate.bat 
 pip install -r requirements.txt
 
-otworzyc backend: 
+otworzyć backend: 
   z folderu /backend:
   python .\manage.py runserver
 otworzyc frontend:
   z folderu \frontend:
   npm run dev
-  otworzyc link z konsoli
-  
-strona dziala yippie
+  otworzyc link z konsoli 
 
-jak zapiszecie plik to powinno przeładować odpowiedni serwer i nie musicie restartowac by zmiany zrobic, do backendu pamietajcie robic migracje jak cos w modelach zrobicie
-
-Jakby cos mi sie nie spushowalo na gita poprawnie to depsy do frontentu:
+Jakby coś było nie zainstalowane we frontendzie, z folderu \frontend:
 npm install 
