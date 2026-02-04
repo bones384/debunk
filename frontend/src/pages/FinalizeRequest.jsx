@@ -200,7 +200,7 @@ export default function FinalizeRequest() {
 
         <div className="mb-5">
           <label className="form-label fw-bold text-muted small text-uppercase">
-            Adresy artykułów (Fake News)
+            Adresy artykułów
           </label>
           
           <div className="d-flex gap-2 mb-2">
