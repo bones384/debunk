@@ -77,11 +77,10 @@ export default function NewEntry() {
         comment: comment.trim(),
         content: comment.trim(),
         
-        articles: goodArticles,
-        sources: goodArticles,
+        articles: goodArticles, 
         
-        category_ids: selectedCategories,
-        tag_ids: selectedCategories, 
+        tag_ids: selectedCategories,
+        category_ids: selectedCategories, 
       };
 
       await api.post("/api/requests/", payload);
@@ -176,7 +175,7 @@ export default function NewEntry() {
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Adresy artykułów *</label>
+          <label className="form-label">Adresy artykułów</label>
           {articles.map((a, i) => (
             <div key={i} className="d-flex gap-2 mb-2">
               <input

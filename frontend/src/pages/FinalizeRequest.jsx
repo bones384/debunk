@@ -14,7 +14,11 @@ export default function FinalizeRequest() {
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
 
-  const [sources, setSources] = useState([]);
+  const [existingArticles, setExistingArticles] = useState([]); 
+  const [addedArticles, setAddedArticles] = useState([]);       
+  const [tempArticle, setTempArticle] = useState("");
+
+  const [sources, setSources] = useState([]); 
   const [newSource, setNewSource] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -37,8 +41,9 @@ export default function FinalizeRequest() {
             const ids = data.tags.map(t => (typeof t === 'object' ? t.id : t));
             setSelectedCategories(ids);
           }
+
           if (data.articles && Array.isArray(data.articles)) {
-            setSources(data.articles);
+            setExistingArticles(data.articles);
           }
         })
         .catch(() => setError("Nie udało się pobrać danych zgłoszenia."))
@@ -56,13 +61,22 @@ export default function FinalizeRequest() {
     );
   };
 
+  const addEditorArticle = () => {
+    if (tempArticle.trim()) {
+      setAddedArticles([...addedArticles, tempArticle.trim()]);
+      setTempArticle("");
+    }
+  };
+  const removeEditorArticle = (index) => {
+    setAddedArticles(addedArticles.filter((_, i) => i !== index));
+  };
+
   const addSource = () => {
     if (newSource.trim()) {
       setSources([...sources, newSource.trim()]);
       setNewSource("");
     }
   };
-
   const removeSource = (index) => {
     setSources(sources.filter((_, i) => i !== index));
   };
@@ -74,7 +88,7 @@ export default function FinalizeRequest() {
 
     const cleanSources = sources.filter(s => s.trim() !== "");
     if (cleanSources.length === 0) {
-      setError("Musisz dodać co najmniej jedno źródło.");
+      setError("Musisz dodać co najmniej jedno źródło weryfikacji.");
       setSaving(false);
       return;
     }
@@ -84,13 +98,18 @@ export default function FinalizeRequest() {
       return;
     }
 
+    const allArticles = [...existingArticles, ...addedArticles].filter(a => a.trim() !== "");
+
     try {
       await api.post("/api/entries/", {
         title: title.trim(),
         content: content.trim(),
         is_truthful: isTruthful,
-        sources: cleanSources,       
-        tag_ids: selectedCategories, 
+        
+        sources: cleanSources, 
+        articles: allArticles, 
+        
+        tag_ids: selectedCategories,
         request_id: requestId
       });
       navigate("/");
@@ -177,11 +196,46 @@ export default function FinalizeRequest() {
           </div>
         </div>
 
+        <hr className="my-5" />
+
+        <div className="mb-5">
+          <label className="form-label fw-bold text-muted small text-uppercase">
+            Adresy artykułów (Fake News)
+          </label>
+          
+          <div className="d-flex gap-2 mb-2">
+             <input 
+               className="form-control" 
+               placeholder="https://..." 
+               value={tempArticle} 
+               onChange={(e) => setTempArticle(e.target.value)} 
+             />
+             <button type="button" className="btn btn-outline-secondary" onClick={addEditorArticle}>DODAJ</button>
+          </div>
+
+          <div className="list-group">
+            {existingArticles.map((art, i) => (
+              <div key={`orig-${i}`} className="list-group-item d-flex justify-content-between align-items-center bg-light border-0 mb-1 rounded text-muted">
+                <span className="text-truncate" title="Link od zgłaszającego (nieedytowalny)">
+                  <i className="fa-solid fa-lock me-2 text-secondary"></i> {art}
+                </span>
+              </div>
+            ))}
+            
+            {addedArticles.map((art, i) => (
+              <div key={`new-${i}`} className="list-group-item d-flex justify-content-between align-items-center bg-white border mb-1 rounded">
+                <span className="text-truncate">{art}</span>
+                <button type="button" className="btn btn-link text-danger p-0" onClick={() => removeEditorArticle(i)}>USUŃ</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="mb-4">
-          <label className="form-label fw-bold text-muted small text-uppercase">Źródła (min. 1)</label>
-          <div className="d-flex gap-2 mb-3">
+          <label className="form-label fw-bold text-muted small text-uppercase">Źródła Weryfikacji (min. 1)</label>
+          <div className="d-flex gap-2 mb-2">
             <input className="form-control" placeholder="https://..." value={newSource} onChange={(e) => setNewSource(e.target.value)} />
-            <button type="button" className="btn btn-outline-danger" onClick={addSource}>DODAJ</button>
+            <button type="button" className="btn btn-outline-secondary" onClick={addSource}>DODAJ</button>
           </div>
           <div className="list-group">
             {sources.map((src, index) => (
@@ -197,7 +251,7 @@ export default function FinalizeRequest() {
 
         <div className="d-flex gap-2 pt-3 border-top">
           <button type="submit" className="btn btn-dark fw-bold px-4" disabled={saving}>
-            {saving ? "TWORZENIE..." : "UTWÓRZ"}
+            {saving ? "TWORZENIE..." : "UTWÓRZ WPIS"}
           </button>
           <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(`/zgloszenia/${requestId}`)} disabled={saving}>
             Anuluj
