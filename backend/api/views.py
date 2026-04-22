@@ -273,7 +273,7 @@ class ProtectedMediaView(APIView):
         if not os.path.exists(file_path):
             raise Http404
 
-        return FileResponse(open(file_path, "rb"))
+        return FileResponse(open(file_path, "rb"), content_type="image/png")
 
 class RequestListCreate(generics.ListCreateAPIView):
     serializer_class = RequestSerializer

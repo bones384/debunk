@@ -174,11 +174,12 @@ function Index() {
                     <div className="mb-3">
                       <small className="text-muted" style={{ fontSize: '0.8rem' }}>
                         <strong>Opisywane artykuły:</strong>
-                        {entry?.articles ? (
-                          <a href={String(entry.articles).includes('http') ? entry.articles : `https://${entry.articles}`} target="_blank" rel="noopener noreferrer" className="ms-1 text-primary text-decoration-underline">
-                            {entry.articles}
-                          </a>
-                        ) : <span className="ms-1">brak</span>}
+                        { entry?.articles.map((url, index) => (
+                            <div key={index}>
+                              <a href={url}>{url}</a>
+                              <br />
+                            </div>
+                        ))}
                       </small>
                     </div>
 
@@ -193,11 +194,12 @@ function Index() {
                     <div className="mb-3">
                       <small className="text-muted d-block" style={{ fontSize: '0.8rem' }}>
                         <strong>Źródła:</strong>
-                        {entry?.sources ? (
-                          <a href={String(entry.sources).includes('http') ? entry.sources : `https://${entry.sources}`} target="_blank" rel="noopener noreferrer" className="ms-1 text-primary text-decoration-underline d-block">
-                            {entry.sources}
-                          </a>
-                        ) : <span className="ms-1">brak</span>}
+                        { entry?.sources.map((url, index) => (
+                          <div key={index}>
+                        <a href={url}>{url}</a>
+                        <br />
+                    </div>
+                    ))}
                       </small>
                     </div>
 

@@ -1,0 +1,54 @@
+services:
+  backend:
+    image: backend
+    build: ./backend
+    container_name: backend
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
+      CORS_ORIGIN_WHITELIST: http://frontend:80, https://frontend:80, http://localhost:8080, https://localhost:8080
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - data:/app/DATA
+      - data:/app/media/application_scans
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+        - todoapp-network
+
+  frontend:
+    image: frontend
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "8080:80"
+    environment:
+      NODE_ENV: production
+      VITE_API_URL: /api
+    env_file:
+      - .env
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+    tmpfs:
+      - /tmp
+    networks:
+        - todoapp-network
+volumes:
+  data:
+networks:
+    todoapp-network:
+      name: todoapp-network
+      driver: bridge

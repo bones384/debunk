@@ -50,7 +50,6 @@ export default function Requests() {
                 className={tabClass} 
                 to={t.to}
                 style={({ isActive }) => ({
-                  borderRight: "1px solid #000",
                   textDecoration: "none",
                   // Usuwamy prawą ramkę dla ostatniego elementu, żeby nie była podwójna
                   borderRight: tabs.indexOf(t) === tabs.length - 1 ? "none" : "1px solid #000"
