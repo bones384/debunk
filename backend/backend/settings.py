@@ -165,4 +165,11 @@ STATIC_URL = "static/"
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ORIGIN_WHITELIST = os.environ.get("CORS_ALLOWED_ORIGINS","http://localhost:5173").split(",")
+origins = os.environ.get("CORS_ORIGIN_WHITELIST", "")
+if origins:
+    CORS_ORIGIN_WHITELIST = origins.split(",")
+CORS_ORIGIN_REGEX_WHITELIST = [
+    # match localhost with any port
+    r"^http:\/\/localhost:*([0-9]+)?$",
+    r"^https:\/\/localhost:*([0-9]+)?$",
+]

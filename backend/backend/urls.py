@@ -36,5 +36,5 @@ urlpatterns = [
     path("api/", include("api.urls")),
     path("api/users/", UsersAll.as_view(), name="get-all-users"),
     path("api/users/<int:pk>/", UserDetailView.as_view(),name="user"),
-    re_path(r"^media/(?P<path>.*)$", ProtectedMediaView.as_view()),
+    re_path(r"^api/media/(?P<path>.*)$", ProtectedMediaView.as_view()),
 ]

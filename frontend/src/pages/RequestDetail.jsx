@@ -2,13 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 
-function getFullUrl(url) {
-  if (!url) return null;
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const base = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
-  return `${base}${url.startsWith("/") ? "" : "/"}${url}`;
-}
-
 export default function RequestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,7 +38,8 @@ export default function RequestDetail() {
 
   const openProtectedImage = async (fileUrl) => {
     try {
-      const response = await api.get(fileUrl, { responseType: "blob" });
+      const path = new URL(fileUrl).pathname;
+      const response = await api.get("/api"+path, { responseType: "blob" });
 
       const blobUrl = window.URL.createObjectURL(response.data);
 
@@ -142,7 +136,6 @@ export default function RequestDetail() {
                 <h6 className="text-uppercase small fw-bold text-muted mb-2">Załączone dokumenty</h6>
                 <ul className="list-group">
                   {scans.map((s) => {
-                    const fullUrl = getFullUrl(s.image);
                     return (
                       <li key={s.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <span className="text-truncate me-3" style={{ maxWidth: "300px" }}>
@@ -151,7 +144,7 @@ export default function RequestDetail() {
 
                         <button
                           className="btn btn-sm btn-outline-primary fw-bold"
-                          onClick={() => openProtectedImage(fullUrl)}
+                          onClick={() => openProtectedImage(s.image)}
                         >
                           <i className="fa-solid fa-eye me-2"></i> PODGLĄD
                         </button>
